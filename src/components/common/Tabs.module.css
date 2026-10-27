@@ -1,0 +1,18 @@
+.tabs { display: flex; gap: 6px; margin: 14px 0 16px; overflow-x: auto; padding: 3px; }
+.tabs button {
+  border: 0;
+  background: none;
+  padding: 7px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  color: var(--slate);
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: background 0.2s var(--ease), color 0.2s;
+}
+.tabs button:hover { background: var(--hover); }
+.tabs button[aria-selected="true"] { background: var(--btn); color: var(--on-btn); }
+.count { font-size: 11px; margin-left: 6px; padding: 0 7px; border-radius: 10px; background: rgba(255, 255, 255, 0.3); }
+.tabs button[aria-selected="false"] .count { background: var(--rule); }

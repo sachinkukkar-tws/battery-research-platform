@@ -1,0 +1,54 @@
+.list { padding: 18px 0; display: flex; flex-direction: column; gap: 2px; margin: 0; list-style: none; }
+.nav {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 11px 26px;
+  color: var(--slate);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+.nav svg { width: 22px; height: 22px; flex: none; opacity: 0.8; }
+.nav:hover { color: var(--primary-ink); }
+.nav:focus-visible { outline-offset: -3px; }
+.nav[aria-current="page"] { color: var(--primary-ink); }
+.nav[aria-current="page"] svg { opacity: 1; }
+/* The notch that points from the active item into the page */
+.nav[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 11px solid transparent;
+  border-right-color: var(--bg);
+}
+.lbl { white-space: nowrap; }
+.badge {
+  margin-left: auto;
+  font-size: 11px;
+  min-width: 22px;
+  text-align: center;
+  padding: 1px 8px;
+  border-radius: 12px;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+:global(.side-collapsed) .nav { justify-content: center; padding: 11px 0; gap: 0; }
+:global(.side-collapsed) .lbl { display: none; }
+:global(.side-collapsed) .badge { position: absolute; top: 2px; left: calc(50% + 5px); min-width: 18px; padding: 0 5px; font-size: 10px; margin: 0; }
+
+@media (max-width: 991px) {
+  .nav[aria-current="page"]::after { display: none; }
+  :global(.side-collapsed) .nav { justify-content: flex-start; padding: 11px 26px; gap: 14px; }
+  :global(.side-collapsed) .lbl { display: revert; }
+  :global(.side-collapsed) .badge { position: static; margin-left: auto; }
+}

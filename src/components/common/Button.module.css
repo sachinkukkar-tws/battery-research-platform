@@ -1,0 +1,57 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  padding: 9px 18px;
+  border-radius: 20px;
+  border: 1px solid var(--btn);
+  background: var(--btn);
+  color: var(--on-btn);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s var(--ease);
+}
+.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.primary:hover:not(:disabled) { background: var(--btn-hover); border-color: var(--btn-hover); }
+.quiet { background: transparent; color: var(--slate); border-color: var(--rule); }
+.quiet:hover:not(:disabled) { border-color: var(--slate); color: var(--ink); }
+.success { background: var(--success-btn); border-color: var(--success-btn); }
+.success:hover:not(:disabled) { background: var(--success-btn-hover); }
+.link {
+  background: none;
+  border: 0;
+  padding: 6px 0;
+  border-radius: 4px;
+  color: var(--primary-ink);
+  font-size: inherit;
+  letter-spacing: 0;
+}
+.link:hover:not(:disabled) { text-decoration: underline; }
+.btn[aria-busy="true"] { cursor: progress; }
+
+.icon {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--slate);
+  transition: color 0.2s, background 0.15s, transform 0.2s var(--ease);
+}
+.icon svg { width: 19px; height: 19px; }
+.icon-raised { background: var(--card); box-shadow: var(--shadow); }
+.icon-raised:hover { color: var(--primary-ink); transform: translateY(-1px); }
+.icon-plain { width: 32px; height: 32px; border-radius: var(--radius-sm); background: none; color: var(--muted); }
+.icon-plain svg { width: 17px; height: 17px; }
+.icon-plain:hover { background: var(--hover); color: var(--ink); }
+.icon-plain[aria-pressed="true"] { color: var(--primary-ink); }

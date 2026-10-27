@@ -1,0 +1,755 @@
+<title>How Amplifi Works</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: ten A4 "sheets" stacked on screen; each sheet prints as exactly one page. */
+:root {
+  --paper: #F6F8FA; --sheet: #FFFFFF; --ink: #15202B; --ink-2: #485766; --ink-3: #7B8896;
+  --line: #DCE3EA; --line-strong: #AEBBC7;
+  --teal: #0E6F69; --teal-tint: #E4F3F1; --teal-ink: #0A4E4A;
+  --amber: #B06A10; --amber-tint: #FBF0DD; --amber-ink: #754507;
+  --plum: #5A4BA8; --plum-tint: #EDEBF9; --plum-ink: #3B3187;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #0F151B; --sheet: #161E26; --ink: #E6ECF1; --ink-2: #A9B6C2; --ink-3: #7C8A97;
+  --line: #2A3641; --line-strong: #46566A;
+  --teal: #4FC3B8; --teal-tint: #12302E; --teal-ink: #9FE3DB;
+  --amber: #E5A54A; --amber-tint: #33250F; --amber-ink: #F5CF94;
+  --plum: #A99CF0; --plum-tint: #241F44; --plum-ink: #D3CCFA;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #0F151B; --sheet: #161E26; --ink: #E6ECF1; --ink-2: #A9B6C2; --ink-3: #7C8A97;
+  --line: #2A3641; --line-strong: #46566A;
+  --teal: #4FC3B8; --teal-tint: #12302E; --teal-ink: #9FE3DB;
+  --amber: #E5A54A; --amber-tint: #33250F; --amber-ink: #F5CF94;
+  --plum: #A99CF0; --plum-tint: #241F44; --plum-ink: #D3CCFA;
+  color-scheme: dark; }
+
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px; }
+.sheet { background: var(--sheet); max-width: 794px; margin: 0 auto 24px; padding: 40px 48px 32px; border: 1px solid var(--line); border-radius: 6px; display: flex; flex-direction: column; gap: 12px; }
+.sheet > * { min-width: 0; }
+.folio { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--ink-3); border-bottom: 1px solid var(--line); padding-bottom: 6px; letter-spacing: .02em; }
+h1 { font-family: var(--display); font-size: 40px; line-height: 1.05; margin: 8px 0 0; letter-spacing: -.01em; text-wrap: balance; }
+h2 { font-family: var(--display); font-size: 23px; line-height: 1.15; margin: 4px 0 0; text-wrap: balance; }
+h3 { font-family: var(--display); font-size: 16px; margin: 6px 0 0; }
+p { margin: 0; max-width: 68ch; }
+.lede { font-size: 16.5px; color: var(--ink-2); max-width: 60ch; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
+code, .mono { font-family: var(--mono); font-size: .86em; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 12.5px; color: var(--ink-2); }
+.meta b { color: var(--ink); }
+.cap { font-size: 12.5px; color: var(--ink-2); }
+.fig { overflow-x: auto; }
+.dg { width: 100%; height: auto; display: block; min-width: 520px; }
+.dg text { font-family: var(--body); }
+.dg .h { font-size: 13px; font-weight: 700; fill: var(--ink); }
+.dg .s { font-size: 11.5px; fill: var(--ink-2); }
+.dg .m { font-family: var(--mono); font-size: 10.5px; fill: var(--ink-2); }
+.dg .mh { font-family: var(--mono); font-size: 11px; font-weight: 600; fill: var(--ink); }
+.dg .b0 { fill: var(--sheet); stroke: var(--line-strong); stroke-width: 1; }
+.dg .ba { fill: var(--teal-tint); stroke: var(--teal); stroke-width: 1; }
+.dg .bb { fill: var(--amber-tint); stroke: var(--amber); stroke-width: 1; }
+.dg .bc { fill: var(--plum-tint); stroke: var(--plum); stroke-width: 1; }
+.dg .ct { fill: none; stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 5 4; }
+.dg .ln { stroke: var(--ink-3); stroke-width: 1.3; fill: none; }
+.dg .lt { stroke: var(--teal); stroke-width: 1.6; fill: none; }
+.dg .grid { stroke: var(--line); stroke-width: 1; }
+.dg .dot { fill: var(--ink-3); opacity: .55; }
+.dg .dot-hit { fill: var(--teal); }
+.dg .q { fill: var(--amber); }
+.dg .bar { fill: var(--teal); }
+.dg .ov { fill: var(--amber); opacity: .85; }
+.ah { fill: var(--ink-3); }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; line-height: 1.4; }
+th { text-align: left; font-weight: 700; color: var(--ink); border-bottom: 1.5px solid var(--line-strong); padding: 5px 8px 5px 0; vertical-align: bottom; }
+td { border-bottom: 1px solid var(--line); padding: 5px 8px 5px 0; vertical-align: top; color: var(--ink-2); }
+td:first-child { color: var(--ink); font-weight: 700; }
+.tw { overflow-x: auto; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 24px; }
+.grid2 div { font-size: 12.8px; color: var(--ink-2); min-width: 0; }
+.grid2 b { color: var(--ink); display: block; font-size: 13.5px; }
+.note { border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 10px 14px; font-size: 12.8px; color: var(--ink-2); }
+.note b { color: var(--ink); }
+.key { border: 1px solid var(--teal); background: var(--teal-tint); border-radius: 6px; padding: 12px 16px; }
+.key h3 { margin: 0 0 4px; color: var(--teal-ink); }
+.key ol, .key ul { margin: 0; padding-left: 20px; display: grid; gap: 3px; font-size: 13.2px; }
+.toc { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 28px; font-size: 13px; }
+.toc li { display: flex; gap: 10px; border-bottom: 1px dotted var(--line); padding-bottom: 3px; }
+.toc .pg { font-family: var(--mono); color: var(--teal); min-width: 18px; font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: var(--ink-2); }
+.legend span::before { content: ""; display: inline-block; width: 11px; height: 11px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; border: 1px solid; }
+.lg-0::before { background: var(--sheet); border-color: var(--line-strong) !important; }
+.lg-a::before { background: var(--teal-tint); border-color: var(--teal) !important; }
+.lg-b::before { background: var(--amber-tint); border-color: var(--amber) !important; }
+.lg-c::before { background: var(--plum-tint); border-color: var(--plum) !important; }
+pre.tree { margin: 0; font-family: var(--mono); font-size: 11.5px; line-height: 1.55; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; overflow-x: auto; color: var(--ink); }
+pre.tree i { font-style: normal; color: var(--ink-3); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+.cols > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.cols p { font-size: 13px; }
+@media (max-width: 640px) {
+  .sheet { padding: 24px 18px; }
+  h1 { font-size: 32px; }
+  .grid2, .cols, .toc { grid-template-columns: 1fr; }
+}
+@media print {
+  :root { --paper: #F6F8FA; --sheet: #FFFFFF; --ink: #15202B; --ink-2: #485766; --ink-3: #7B8896; --line: #DCE3EA; --line-strong: #AEBBC7;
+    --teal: #0E6F69; --teal-tint: #E4F3F1; --teal-ink: #0A4E4A; --amber: #B06A10; --amber-tint: #FBF0DD; --amber-ink: #754507;
+    --plum: #5A4BA8; --plum-tint: #EDEBF9; --plum-ink: #3B3187; color-scheme: light; }
+  @page { size: A4; margin: 12mm 13mm; }
+  body { background: #FFFFFF; padding: 0; font-size: 13px; }
+  .sheet { border: 0; border-radius: 0; margin: 0; padding: 0; max-width: none; break-after: page; gap: 10px; }
+  .sheet:last-child { break-after: auto; }
+  .dg { min-width: 0; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" class="ah"/>
+    </marker>
+  </defs>
+</svg>
+
+<!-- ============ PAGE 1 ============ -->
+<section class="sheet" id="overview">
+  <div class="folio"><span>Battery Research Platform · Amplifi guide</span><span>1 / 10</span></div>
+  <div class="eyebrow">Plain-language guide</div>
+  <h1>How Amplifi works</h1>
+  <p class="lede">What the Amplifi platform does, how its parts fit together, and where each part lives in the code. It is written so anyone on the Battery POC team can follow it and explain it.</p>
+  <div class="meta">
+    <span><b>Date</b> 26 October 2026</span>
+    <span><b>Based on</b> the amplifi-dev repository: README, CLAUDE.md, the user docs in <code>docusaurus/docs</code> and the service READMEs, checked against the code</span>
+    <span><b>Scope</b> read-only; nothing in Amplifi was changed</span>
+  </div>
+
+  <h2>Amplifi in one sentence</h2>
+  <p>Amplifi takes an organisation's documents and data, makes them searchable by meaning, and lets AI agents answer questions about them while showing the passages they used. It is built by ThoughtsWin Systems and runs on Microsoft Azure.</p>
+
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 130" role="img" aria-labelledby="d1t">
+    <title id="d1t">Amplifi's three jobs: bring data in, make it searchable, answer questions</title>
+    <rect class="b0" x="10" y="15" width="200" height="100" rx="8"/>
+    <text class="m" x="110" y="38" text-anchor="middle">Step 1</text>
+    <text class="h" x="110" y="60" text-anchor="middle">Bring data in</text>
+    <text class="s" x="110" y="82" text-anchor="middle">Upload files, or connect</text>
+    <text class="s" x="110" y="99" text-anchor="middle">S3, Azure Blob, databases</text>
+    <rect class="ba" x="240" y="15" width="200" height="100" rx="8"/>
+    <text class="m" x="340" y="38" text-anchor="middle">Step 2</text>
+    <text class="h" x="340" y="60" text-anchor="middle">Make it searchable</text>
+    <text class="s" x="340" y="82" text-anchor="middle">Cut files into chunks and</text>
+    <text class="s" x="340" y="99" text-anchor="middle">store what each one means</text>
+    <rect class="bb" x="470" y="15" width="200" height="100" rx="8"/>
+    <text class="m" x="570" y="38" text-anchor="middle">Step 3</text>
+    <text class="h" x="570" y="60" text-anchor="middle">Answer questions</text>
+    <text class="s" x="570" y="82" text-anchor="middle">Agents search the chunks</text>
+    <text class="s" x="570" y="99" text-anchor="middle">and reply with sources</text>
+    <line class="ln" x1="210" y1="65" x2="237" y2="65" marker-end="url(#ar)"/>
+    <line class="ln" x1="440" y1="65" x2="467" y2="65" marker-end="url(#ar)"/>
+  </svg>
+  </div>
+
+  <div class="key">
+    <h3>Three things to remember</h3>
+    <ol>
+      <li>Everything lives inside a <b>workspace</b>. Files are grouped into <b>datasets</b>, datasets are searched by <b>tools</b>, and tools are used by <b>agents</b>.</li>
+      <li>Slow work, like reading 30 PDFs, is done by separate <b>worker services</b> that pick jobs off a queue. The API itself always answers quickly.</li>
+      <li>An agent is a <b>prompt + a language model + search tools</b>. It searches first, reads what it found, then writes the answer.</li>
+    </ol>
+  </div>
+
+  <h2>What is in this guide</h2>
+  <ol class="toc">
+    <li><span class="pg">2</span>The building blocks and their names</li>
+    <li><span class="pg">3</span>The big picture: every part on one page</li>
+    <li><span class="pg">4</span>Journey 1: getting documents in</li>
+    <li><span class="pg">5</span>Journey 2: asking a question</li>
+    <li><span class="pg">6</span>How search finds the right passage</li>
+    <li><span class="pg">7</span>Knowledge graphs, SQL and other features</li>
+    <li><span class="pg">8</span>The 12 services and their job queues</li>
+    <li><span class="pg">9</span>Logins, roles and where it runs</li>
+    <li><span class="pg">10</span>The code map, and what it means for BRP</li>
+  </ol>
+</section>
+
+<!-- ============ PAGE 2 ============ -->
+<section class="sheet" id="blocks">
+  <div class="folio"><span>The building blocks</span><span>2 / 10</span></div>
+  <h2>The building blocks and their names</h2>
+  <p>Amplifi organises everything in a strict hierarchy. Once you know these names you can read almost any screen, document or API route in the project.</p>
+
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 250" role="img" aria-labelledby="d2t">
+    <title id="d2t">An organization contains workspaces; a workspace contains files, datasets, tools, agents and chat apps</title>
+    <rect class="ct" x="5" y="5" width="670" height="240" rx="14"/>
+    <text x="22" y="28"><tspan class="h">Organization</tspan><tspan class="s" dx="10">your company's account: users, roles and API clients</tspan></text>
+    <rect class="ba" x="22" y="44" width="636" height="186" rx="12"/>
+    <text x="38" y="68"><tspan class="h">Workspace</tspan><tspan class="s" dx="10">one project, for example the Battery POC</tspan></text>
+    <rect class="b0" x="34" y="86" width="108" height="70" rx="7"/>
+    <text class="h" x="88" y="108" text-anchor="middle">Files</text>
+    <text class="s" x="88" y="128" text-anchor="middle">PDFs, CSVs,</text>
+    <text class="s" x="88" y="144" text-anchor="middle">audio, video</text>
+    <rect class="b0" x="160" y="86" width="108" height="70" rx="7"/>
+    <text class="h" x="214" y="108" text-anchor="middle">Datasets</text>
+    <text class="s" x="214" y="128" text-anchor="middle">Files grouped</text>
+    <text class="s" x="214" y="144" text-anchor="middle">and ingested</text>
+    <rect class="b0" x="286" y="86" width="108" height="70" rx="7"/>
+    <text class="h" x="340" y="108" text-anchor="middle">Tools</text>
+    <text class="s" x="340" y="128" text-anchor="middle">Search over</text>
+    <text class="s" x="340" y="144" text-anchor="middle">chosen datasets</text>
+    <rect class="b0" x="412" y="86" width="108" height="70" rx="7"/>
+    <text class="h" x="466" y="108" text-anchor="middle">Agent</text>
+    <text class="s" x="466" y="128" text-anchor="middle">Prompt, model</text>
+    <text class="s" x="466" y="144" text-anchor="middle">and tools</text>
+    <rect class="b0" x="538" y="86" width="108" height="70" rx="7"/>
+    <text class="h" x="592" y="108" text-anchor="middle">Chat app</text>
+    <text class="s" x="592" y="128" text-anchor="middle">Agent plus</text>
+    <text class="s" x="592" y="144" text-anchor="middle">chat history</text>
+    <line class="ln" x1="142" y1="121" x2="158" y2="121" marker-end="url(#ar)"/>
+    <line class="ln" x1="268" y1="121" x2="284" y2="121" marker-end="url(#ar)"/>
+    <line class="ln" x1="394" y1="121" x2="410" y2="121" marker-end="url(#ar)"/>
+    <line class="ln" x1="520" y1="121" x2="536" y2="121" marker-end="url(#ar)"/>
+    <text class="m" x="151" y="178" text-anchor="middle">ingest</text>
+    <text class="m" x="277" y="178" text-anchor="middle">point at</text>
+    <text class="m" x="403" y="178" text-anchor="middle">give to</text>
+    <text class="m" x="529" y="178" text-anchor="middle">wrap in</text>
+    <text class="s" x="38" y="212">A chat session sits under a chat app and keeps one conversation's history.</text>
+  </svg>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:17%">Term</th><th style="width:47%">What it means in plain words</th><th>In the Battery POC</th></tr></thead>
+    <tbody>
+      <tr><td>Organization</td><td>The company account. It holds users, their roles and API clients.</td><td>The org that owns the POC workspace</td></tr>
+      <tr><td>Workspace</td><td>A project space. Everything below lives inside exactly one workspace.</td><td>The workspace with Theme A and Theme B</td></tr>
+      <tr><td>File</td><td>Anything uploaded or pulled in: PDF, Word, PowerPoint, Excel, CSV, image, audio or video. The web app accepts up to 30 MB per file.</td><td>The 37 paper PDFs</td></tr>
+      <tr><td>Dataset</td><td>A named group of files that are ingested together and searched together.</td><td>"Theme A" (lithium-ion) and "Theme B-Client-Papers" (CP01–CP10)</td></tr>
+      <tr><td>Ingestion</td><td>Reading the files, cutting them into chunks and storing them so they can be searched.</td><td>Run once per dataset</td></tr>
+      <tr><td>Chunk</td><td>A short passage of a file. Search always returns chunks, never whole files.</td><td>A paragraph on a capacity test</td></tr>
+      <tr><td>Embedding</td><td>A list of numbers describing what a chunk means, so passages with similar meaning sit close together.</td><td>Made by Azure OpenAI</td></tr>
+      <tr><td>Tool</td><td>An ability an agent can use, such as Vector Search, pointed at chosen datasets.</td><td>Tool-01 File Navigator, Tool-02 Vector Search, Tool-03 Hybrid Search</td></tr>
+      <tr><td>Agent</td><td>A prompt (instructions), a language model and a set of tools.</td><td>The chat agent on prompt v4.7, GPT-5.2</td></tr>
+      <tr><td>Chat app, session</td><td>A chat app is an agent ready for chatting. A session is one conversation and its history.</td><td>Used in the Amplifi web app today</td></tr>
+      <tr><td>API client</td><td>A login for programs rather than people: a client ID and a secret.</td><td>What the BRP proxy will use</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ PAGE 3 ============ -->
+<section class="sheet" id="big-picture">
+  <div class="folio"><span>The big picture</span><span>3 / 10</span></div>
+  <h2>The big picture: every part on one page</h2>
+  <p>Amplifi is not one program. It is a set of cooperating services, each running in its own container. Requests come in at the top; slow work is passed down to workers; everything ends up stored in Postgres.</p>
+
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 500" role="img" aria-labelledby="d3t" style="max-width:600px;margin:0 auto">
+    <title id="d3t">Architecture: web app and other programs call nginx, which calls fastapi-service; the API stores data in Postgres, queues jobs in RabbitMQ for worker services, and calls Azure OpenAI</title>
+    <rect class="b0" x="60" y="10" width="260" height="50" rx="8"/>
+    <text class="h" x="190" y="30" text-anchor="middle">Amplifi web app</text>
+    <text class="s" x="190" y="48" text-anchor="middle">People in a browser</text>
+    <rect class="b0" x="360" y="10" width="260" height="50" rx="8"/>
+    <text class="h" x="490" y="30" text-anchor="middle">Other programs</text>
+    <text class="s" x="490" y="48" text-anchor="middle">API clients, such as the BRP proxy</text>
+    <line class="ln" x1="190" y1="60" x2="190" y2="95" marker-end="url(#ar)"/>
+    <line class="ln" x1="490" y1="60" x2="490" y2="95" marker-end="url(#ar)"/>
+    <rect class="b0" x="60" y="98" width="560" height="46" rx="8"/>
+    <text class="h" x="340" y="116" text-anchor="middle">Front door (nginx)</text>
+    <text class="s" x="340" y="134" text-anchor="middle">Sends /api/v3 to the API and limits how fast each caller can send requests</text>
+    <line class="ln" x1="340" y1="144" x2="340" y2="177" marker-end="url(#ar)"/>
+    <rect class="ba" x="60" y="180" width="560" height="58" rx="8"/>
+    <text class="h" x="340" y="202" text-anchor="middle">fastapi-service: the API</text>
+    <text class="s" x="340" y="222" text-anchor="middle">Checks who you are, runs agents, saves records, and queues slow work</text>
+    <line class="ln" x1="140" y1="238" x2="140" y2="279" marker-end="url(#ar)"/>
+    <line class="ln" x1="540" y1="238" x2="540" y2="279" marker-end="url(#ar)"/>
+    <rect class="ba" x="60" y="282" width="160" height="56" rx="8"/>
+    <text class="h" x="140" y="304" text-anchor="middle">RabbitMQ</text>
+    <text class="s" x="140" y="323" text-anchor="middle">Queues of waiting jobs</text>
+    <line class="ln" x1="220" y1="310" x2="247" y2="310" marker-end="url(#ar)"/>
+    <rect class="ba" x="250" y="282" width="180" height="56" rx="8"/>
+    <text class="h" x="340" y="304" text-anchor="middle">Worker services</text>
+    <text class="s" x="340" y="323" text-anchor="middle">Read, index, graph, train</text>
+    <line class="ln" x1="430" y1="310" x2="457" y2="310" marker-end="url(#ar)"/>
+    <path class="ln" d="M430 328 L445 328 L445 384 L457 384" marker-end="url(#ar)"/>
+    <rect class="bc" x="460" y="282" width="160" height="56" rx="8"/>
+    <text class="h" x="540" y="304" text-anchor="middle">Postgres + pgvector</text>
+    <text class="s" x="540" y="323" text-anchor="middle">Records and vectors</text>
+    <rect class="bc" x="460" y="356" width="160" height="56" rx="8"/>
+    <text class="h" x="540" y="378" text-anchor="middle">Memgraph</text>
+    <text class="s" x="540" y="397" text-anchor="middle">Knowledge graphs</text>
+    <rect class="bc" x="460" y="430" width="160" height="56" rx="8"/>
+    <text class="h" x="540" y="452" text-anchor="middle">Redis</text>
+    <text class="s" x="540" y="471" text-anchor="middle">Fast login cache</text>
+    <line class="ln" x1="340" y1="338" x2="340" y2="397" marker-end="url(#ar)"/>
+    <path class="ln" d="M60 224 L36 224 L36 428 L57 428" marker-end="url(#ar)"/>
+    <rect class="bb" x="60" y="400" width="370" height="56" rx="8"/>
+    <text class="h" x="245" y="422" text-anchor="middle">Azure OpenAI (outside Amplifi)</text>
+    <text class="s" x="245" y="441" text-anchor="middle">Language models and embeddings</text>
+  </svg>
+  </div>
+  <div class="legend"><span class="lg-0">Entry points</span><span class="lg-a">Amplifi's own services</span><span class="lg-c">Storage</span><span class="lg-b">External AI service</span></div>
+
+  <div class="grid2">
+    <div><b>fastapi-service</b>The only part that speaks HTTP. It checks logins, reads and writes records, runs agents for chat, and puts slow jobs on a queue.</div>
+    <div><b>RabbitMQ</b>A post office for jobs. Each kind of job has its own named queue, and the matching worker collects from it.</div>
+    <div><b>Worker services</b>Separate programs, each doing one kind of job: reading documents, transcribing audio, building graphs, training SQL models. Built on Celery.</div>
+    <div><b>Postgres + pgvector</b>The main database: users, workspaces, datasets, agents, chat history, job results, and every chunk with its embedding.</div>
+    <div><b>Memgraph and Redis</b>Memgraph stores knowledge graphs. Redis is a short-term memory, for example a login that was just checked.</div>
+    <div><b>Azure OpenAI</b>Writes answers, makes embeddings and tidies questions. Amplifi's rules keep customer data in region.</div>
+  </div>
+  <p class="note"><b>Also running:</b> nginx allows 10 requests a second per caller; Temporal runs long workflows that must survive crashes; Vault holds secrets; Flower, Prometheus and Grafana monitor it all. <b>Older diagram:</b> <code>static/hld_view_Amplifi.png</code> shows an earlier design with an "R2R server" doing search. The current code does that itself.</p>
+</section>
+
+<!-- ============ PAGE 4 ============ -->
+<section class="sheet" id="ingestion">
+  <div class="folio"><span>Journey 1</span><span>4 / 10</span></div>
+  <h2>Journey 1: getting documents in</h2>
+  <p>Before anyone can ask a question, files must be ingested. The first four steps happen through the API, from the web app or another program. The API then hands the heavy work to a worker, so the screen does not freeze while 30 PDFs are read.</p>
+
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 245" role="img" aria-labelledby="d4t">
+    <title id="d4t">Ingestion: upload, create dataset, set chunking, start ingestion; then a worker reads, chunks, embeds and saves</title>
+    <rect class="b0" x="30" y="30" width="140" height="56" rx="8"/>
+    <text class="h" x="100" y="52" text-anchor="middle">1 Upload files</text>
+    <text class="s" x="100" y="71" text-anchor="middle">PDF, DOCX, CSV, audio</text>
+    <rect class="b0" x="190" y="30" width="140" height="56" rx="8"/>
+    <text class="h" x="260" y="52" text-anchor="middle">2 Create dataset</text>
+    <text class="s" x="260" y="71" text-anchor="middle">Choose the files</text>
+    <rect class="b0" x="350" y="30" width="140" height="56" rx="8"/>
+    <text class="h" x="420" y="52" text-anchor="middle">3 Set chunking</text>
+    <text class="s" x="420" y="71" text-anchor="middle">Chunk size, overlap</text>
+    <rect class="b0" x="510" y="30" width="140" height="56" rx="8"/>
+    <text class="h" x="580" y="52" text-anchor="middle">4 Start ingestion</text>
+    <text class="s" x="580" y="71" text-anchor="middle">Jobs join the queue</text>
+    <line class="ln" x1="170" y1="58" x2="187" y2="58" marker-end="url(#ar)"/>
+    <line class="ln" x1="330" y1="58" x2="347" y2="58" marker-end="url(#ar)"/>
+    <line class="ln" x1="490" y1="58" x2="507" y2="58" marker-end="url(#ar)"/>
+    <path class="ln" d="M580 86 L580 112 L100 112 L100 143" marker-end="url(#ar)"/>
+    <text class="s" x="340" y="132" text-anchor="middle">RabbitMQ carries one job per file; very large files are split into parts</text>
+    <rect class="ba" x="30" y="146" width="140" height="56" rx="8"/>
+    <text class="h" x="100" y="168" text-anchor="middle">5 Read the file</text>
+    <text class="s" x="100" y="187" text-anchor="middle">Text, tables, images</text>
+    <rect class="ba" x="190" y="146" width="140" height="56" rx="8"/>
+    <text class="h" x="260" y="168" text-anchor="middle">6 Cut into chunks</text>
+    <text class="s" x="260" y="187" text-anchor="middle">2,500 characters</text>
+    <rect class="ba" x="350" y="146" width="140" height="56" rx="8"/>
+    <text class="h" x="420" y="168" text-anchor="middle">7 Make embeddings</text>
+    <text class="s" x="420" y="187" text-anchor="middle">Meaning as numbers</text>
+    <rect class="ba" x="510" y="146" width="140" height="56" rx="8"/>
+    <text class="h" x="580" y="168" text-anchor="middle">8 Save the chunks</text>
+    <text class="s" x="580" y="187" text-anchor="middle">Postgres + pgvector</text>
+    <line class="ln" x1="170" y1="174" x2="187" y2="174" marker-end="url(#ar)"/>
+    <line class="ln" x1="330" y1="174" x2="347" y2="174" marker-end="url(#ar)"/>
+    <line class="ln" x1="490" y1="174" x2="507" y2="174" marker-end="url(#ar)"/>
+    <text class="s" x="30" y="232">Each file's status moves to "success" or "failed"; the app keeps checking until every file has finished.</text>
+  </svg>
+  </div>
+  <div class="legend"><span class="lg-0">Done through the API</span><span class="lg-a">Done by a background worker</span></div>
+
+  <h3>What chunking with overlap looks like</h3>
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 145" role="img" aria-labelledby="d5t">
+    <title id="d5t">Five overlapping 2,500-character chunks laid over a 10,000-character document; neighbouring chunks share 250 characters</title>
+    <text class="s" x="40" y="22">Chunks laid over one 10,000-character document</text>
+    <text class="s" x="640" y="22" text-anchor="end">Amber: 250 characters shared by neighbours</text>
+    <rect class="ba" x="40" y="38" width="150" height="20" rx="4"/><text class="s" x="115" y="52" text-anchor="middle">Chunk 1</text>
+    <rect class="ba" x="175" y="64" width="150" height="20" rx="4"/><text class="s" x="250" y="78" text-anchor="middle">Chunk 2</text>
+    <rect class="ba" x="310" y="38" width="150" height="20" rx="4"/><text class="s" x="385" y="52" text-anchor="middle">Chunk 3</text>
+    <rect class="ba" x="445" y="64" width="150" height="20" rx="4"/><text class="s" x="520" y="78" text-anchor="middle">Chunk 4</text>
+    <rect class="ba" x="580" y="38" width="60" height="20" rx="4"/><text class="s" x="610" y="52" text-anchor="middle">Chunk 5</text>
+    <rect class="b0" x="40" y="96" width="600" height="16" rx="3"/>
+    <rect class="ov" x="175" y="96" width="15" height="16"/>
+    <rect class="ov" x="310" y="96" width="15" height="16"/>
+    <rect class="ov" x="445" y="96" width="15" height="16"/>
+    <rect class="ov" x="580" y="96" width="15" height="16"/>
+    <line class="grid" x1="190" y1="112" x2="190" y2="120"/><line class="grid" x1="340" y1="112" x2="340" y2="120"/><line class="grid" x1="490" y1="112" x2="490" y2="120"/>
+    <text class="m" x="40" y="134">0</text>
+    <text class="m" x="190" y="134" text-anchor="middle">2,500</text>
+    <text class="m" x="340" y="134" text-anchor="middle">5,000</text>
+    <text class="m" x="490" y="134" text-anchor="middle">7,500</text>
+    <text class="m" x="640" y="134" text-anchor="end">10,000 characters</text>
+  </svg>
+  </div>
+  <p class="cap">The web app's default is 2,500 characters per chunk with 250 characters of overlap, roughly half a PDF page. The overlap means a sentence cut at a boundary still appears whole in one chunk. The user docs describe the size in tokens (about 2.5 pages), but the setting the code sends is <code>max_characters</code>.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:24%">Kind of input</th><th style="width:28%">Worker that handles it</th><th>What the worker does</th></tr></thead>
+    <tbody>
+      <tr><td>Documents</td><td><code>document-ingestion-service</code></td><td>Reads PDF, Word, PowerPoint, HTML, Excel, CSV and Markdown with Docling, then chunks and embeds them</td></tr>
+      <tr><td>Images</td><td><code>image-ingestion-service</code></td><td>Reads text with OCR, describes the picture with a vision model, then embeds it</td></tr>
+      <tr><td>Audio</td><td><code>audio-ingestion-service</code></td><td>Transcribes with Azure Speech, identifies speakers, then chunks the transcript</td></tr>
+      <tr><td>Video</td><td><code>video-ingestion-service</code></td><td>Extracts and transcribes the audio, samples frames, then chunks it</td></tr>
+      <tr><td>Database tables</td><td><code>file-pull-service</code></td><td>Copies tables from Postgres, MySQL, Redshift or Fabric for SQL questions. Tables are not chunked.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============ PAGE 5 ============ -->
+<section class="sheet" id="chat">
+  <div class="folio"><span>Journey 2</span><span>5 / 10</span></div>
+  <h2>Journey 2: asking a question</h2>
+  <p>A question goes to an agent. The agent does not answer from memory. It runs a loop: the language model decides what to search for, a tool does the search, the model reads the results, and it repeats until it has enough to answer.</p>
+
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 366" role="img" aria-labelledby="d6t">
+    <title id="d6t">Chat request: arrives, access checked, agent loaded, question prepared, then the agent loop between the language model and search tools, then the reply</title>
+    <rect class="b0" x="30" y="10" width="140" height="56" rx="8"/>
+    <text class="h" x="100" y="32" text-anchor="middle">1 Request arrives</text>
+    <text class="s" x="100" y="51" text-anchor="middle">Question + agent ID</text>
+    <rect class="b0" x="190" y="10" width="140" height="56" rx="8"/>
+    <text class="h" x="260" y="32" text-anchor="middle">2 Check access</text>
+    <text class="s" x="260" y="51" text-anchor="middle">Token, role, org</text>
+    <rect class="b0" x="350" y="10" width="140" height="56" rx="8"/>
+    <text class="h" x="420" y="32" text-anchor="middle">3 Load the agent</text>
+    <text class="s" x="420" y="51" text-anchor="middle">Prompt, model, tools</text>
+    <rect class="b0" x="510" y="10" width="140" height="56" rx="8"/>
+    <text class="h" x="580" y="32" text-anchor="middle">4 Prepare question</text>
+    <text class="s" x="580" y="51" text-anchor="middle">GPT-4.1 may split it</text>
+    <line class="ln" x1="170" y1="38" x2="187" y2="38" marker-end="url(#ar)"/>
+    <line class="ln" x1="330" y1="38" x2="347" y2="38" marker-end="url(#ar)"/>
+    <line class="ln" x1="490" y1="38" x2="507" y2="38" marker-end="url(#ar)"/>
+    <line class="ln" x1="580" y1="66" x2="580" y2="103" marker-end="url(#ar)"/>
+    <rect class="ct" x="30" y="106" width="620" height="150" rx="10"/>
+    <text x="46" y="128"><tspan class="h">5 The agent loop</tspan><tspan class="s" dx="10">repeats until the model can answer</tspan></text>
+    <rect class="bb" x="70" y="146" width="200" height="80" rx="8"/>
+    <text class="h" x="170" y="170" text-anchor="middle">Language model</text>
+    <text class="s" x="170" y="190" text-anchor="middle">Reads the question</text>
+    <text class="s" x="170" y="206" text-anchor="middle">and every result</text>
+    <rect class="ba" x="410" y="146" width="200" height="80" rx="8"/>
+    <text class="h" x="510" y="170" text-anchor="middle">Search tools</text>
+    <text class="s" x="510" y="190" text-anchor="middle">Vector, hybrid, file,</text>
+    <text class="s" x="510" y="206" text-anchor="middle">graph, SQL</text>
+    <text class="s" x="340" y="166" text-anchor="middle">asks for a search</text>
+    <line class="ln" x1="270" y1="176" x2="407" y2="176" marker-end="url(#ar)"/>
+    <line class="ln" x1="410" y1="204" x2="273" y2="204" marker-end="url(#ar)"/>
+    <text class="s" x="340" y="222" text-anchor="middle">returns chunks</text>
+    <line class="ln" x1="340" y1="256" x2="340" y2="283" marker-end="url(#ar)"/>
+    <rect class="b0" x="30" y="286" width="620" height="70" rx="8"/>
+    <text class="h" x="340" y="306" text-anchor="middle">6 Reply</text>
+    <text class="s" x="340" y="326" text-anchor="middle">The answer, plus the chunks it used: file name, file ID and text</text>
+    <text class="s" x="340" y="343" text-anchor="middle">Saved to the chat history when the request belongs to a chat session</text>
+  </svg>
+  </div>
+
+  <h3>Three ways to send a question</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:21%">Route</th><th style="width:24%">Who can call it</th><th>What comes back</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST /chat/upload</code></td><td>People and API clients</td><td>One JSON reply with no history. An optional <code>output_schema</code> forces the answer into a fixed JSON shape. PDFs or images can be attached.</td></tr>
+      <tr><td><code>POST /chat</code></td><td>Signed-in people</td><td>One JSON reply, saved to a chat session so follow-up questions keep their context</td></tr>
+      <tr><td><code>POST /chat/stream</code></td><td>Signed-in people</td><td>The same reply, streamed word by word while it is written</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="cols">
+    <div><h3>Details that surprise people</h3>
+      <p><b>The question may be rewritten.</b> Before the agent starts, GPT-4.1 checks whether the message holds several questions. If it does, the agent answers each part separately and the reply has one entry per part.</p>
+      <p><b>History is short.</b> The model sees only the last 5 messages of a session.</p>
+    </div>
+    <div><h3>&nbsp;</h3>
+      <p><b>Sources are chunks, not pages.</b> The reply lists the chunks the tools returned. Page numbers in an answer come from the model reading the text, so they need checking.</p>
+      <p><b>Errors can look like success.</b> If the agent fails, <code>/chat/upload</code> still returns HTTP 200 with an <code>error</code> field.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PAGE 6 ============ -->
+<section class="sheet" id="search">
+  <div class="folio"><span>Search</span><span>6 / 10</span></div>
+  <h2>How search finds the right passage</h2>
+  <p>Every chunk's embedding places it on a "map of meaning". Passages about similar things land close together, even when they use different words. A question is placed on the same map, and search returns the chunks nearest to it.</p>
+
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 260" role="img" aria-labelledby="d7t">
+    <title id="d7t">Chunks shown as dots in three clusters by topic; the question sits near the anode cluster and the three nearest chunks are returned</title>
+    <rect class="ct" x="10" y="6" width="660" height="248" rx="10"/>
+    <text class="s" x="480" y="32" text-anchor="middle">Cathode chemistry</text>
+    <circle class="dot" cx="450" cy="62" r="6"/><circle class="dot" cx="480" cy="52" r="6"/><circle class="dot" cx="510" cy="70" r="6"/>
+    <circle class="dot" cx="470" cy="86" r="6"/><circle class="dot" cx="500" cy="100" r="6"/><circle class="dot" cx="445" cy="94" r="6"/>
+    <circle class="dot" cx="430" cy="190" r="6"/><circle class="dot" cx="465" cy="180" r="6"/><circle class="dot" cx="500" cy="195" r="6"/>
+    <circle class="dot" cx="450" cy="214" r="6"/><circle class="dot" cx="490" cy="222" r="6"/><circle class="dot" cx="522" cy="205" r="6"/>
+    <text class="s" x="476" y="246" text-anchor="middle">Synthesis and carbonization</text>
+    <circle class="dot" cx="170" cy="90" r="6"/><circle class="dot" cx="195" cy="76" r="6"/><circle class="dot" cx="185" cy="118" r="6"/>
+    <circle class="dot" cx="160" cy="130" r="6"/><circle class="dot" cx="230" cy="80" r="6"/>
+    <line class="lt" x1="238" y1="128" x2="250" y2="112"/>
+    <line class="lt" x1="238" y1="128" x2="210" y2="140"/>
+    <line class="lt" x1="238" y1="128" x2="215" y2="100"/>
+    <circle class="dot-hit" cx="250" cy="112" r="6.5"/><circle class="dot-hit" cx="210" cy="140" r="6.5"/><circle class="dot-hit" cx="215" cy="100" r="6.5"/>
+    <polygon class="q" points="238,118 241,125 248,125 242,130 245,137 238,133 231,137 234,130 228,125 235,125"/>
+    <text class="h" x="256" y="150">Your question</text>
+    <text class="s" x="190" y="186" text-anchor="middle">Anode capacity and efficiency</text>
+    <text class="s" x="610" y="128" text-anchor="middle">Grey: other</text>
+    <text class="s" x="610" y="144" text-anchor="middle">chunks</text>
+    <text class="s" x="330" y="62" text-anchor="middle">Teal: the 3 nearest</text>
+    <text class="s" x="330" y="78" text-anchor="middle">chunks are returned</text>
+  </svg>
+  </div>
+  <p class="cap">Example question: "What is the reversible capacity of BGP@HEC-HC?" Nearness is measured with cosine distance by default; L2 and Lp distances can be chosen on the Search page, which also reports precision, ranking quality (NDCG) and speed per dataset.</p>
+
+  <h3>The built-in tools an agent can use</h3>
+  <div class="tw"><table>
+    <thead><tr><th style="width:21%">Tool</th><th style="width:44%">What it does</th><th>Example question</th></tr></thead>
+    <tbody>
+      <tr><td>Vector Search</td><td>Finds chunks closest in meaning to the question</td><td>"Find passages on first-cycle efficiency"</td></tr>
+      <tr><td>Hybrid Search</td><td>Combines meaning with exact keyword matches, then merges the two rankings</td><td>Exact sample names such as "ABP-L-1400"</td></tr>
+      <tr><td>File System Navigator</td><td>Lists and reads files in the workspace by name</td><td>"Which file is Shen 2026?"</td></tr>
+      <tr><td>Text to SQL</td><td>Writes SQL for a connected database and runs it</td><td>"Average capacity by anode type"</td></tr>
+      <tr><td>Graph Search</td><td>Follows links in a knowledge graph</td><td>"Which cathodes were tested with this anode?"</td></tr>
+      <tr><td>Visualization</td><td>Draws a chart from data</td><td>"Plot capacity against efficiency"</td></tr>
+      <tr><td>Web Search</td><td>Searches the internet through Tavily</td><td>Current news or standards</td></tr>
+      <tr><td>Video Search</td><td>Searches inside indexed videos using transcripts</td><td>"Where was the roadmap discussed?"</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note"><b>Find the file first, then search inside it.</b> When an agent has both File Navigator and a search tool, Amplifi tells it to locate the file before searching. The Theme B tools follow that order: Tool-01 File Navigator, Tool-02 Vector Search, then Tool-03 Hybrid Search.</p>
+</section>
+
+<!-- ============ PAGE 7 ============ -->
+<section class="sheet" id="features">
+  <div class="folio"><span>More features</span><span>7 / 10</span></div>
+  <h2>Knowledge graphs, SQL and other features</h2>
+
+  <h3>Knowledge graphs: facts as connected dots</h3>
+  <p>A knowledge graph is built from an ingested dataset in two passes: first the <b>entities</b> (materials, papers, people, organisations), then the <b>relationships</b> between them. <code>graph-service</code> does the work and stores the result in Memgraph. Graph Search then lets an agent follow the links, which suits questions about connections.</p>
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 185" role="img" aria-labelledby="d8t">
+    <title id="d8t">Illustrative knowledge graph: CP01 reports BGP@HEC-HC, tested with NFPP; CP05 reports ABP-L-1400, made from bamboo powder</title>
+    <rect class="bc" x="30" y="30" width="110" height="32" rx="16"/><text class="h" x="85" y="51" text-anchor="middle">CP01 · paper</text>
+    <rect class="ba" x="260" y="30" width="130" height="32" rx="16"/><text class="h" x="325" y="51" text-anchor="middle">BGP@HEC-HC</text>
+    <rect class="b0" x="520" y="30" width="130" height="32" rx="16"/><text class="h" x="585" y="51" text-anchor="middle">NFPP · cathode</text>
+    <rect class="bc" x="30" y="130" width="110" height="32" rx="16"/><text class="h" x="85" y="151" text-anchor="middle">CP05 · paper</text>
+    <rect class="ba" x="260" y="130" width="130" height="32" rx="16"/><text class="h" x="325" y="151" text-anchor="middle">ABP-L-1400</text>
+    <rect class="bb" x="520" y="130" width="130" height="32" rx="16"/><text class="h" x="585" y="151" text-anchor="middle">Bamboo powder</text>
+    <line class="ln" x1="140" y1="46" x2="257" y2="46" marker-end="url(#ar)"/><text class="m" x="199" y="38" text-anchor="middle">reports</text>
+    <line class="ln" x1="390" y1="46" x2="517" y2="46" marker-end="url(#ar)"/><text class="m" x="454" y="38" text-anchor="middle">tested with</text>
+    <line class="ln" x1="140" y1="146" x2="257" y2="146" marker-end="url(#ar)"/><text class="m" x="199" y="138" text-anchor="middle">reports</text>
+    <line class="ln" x1="390" y1="146" x2="517" y2="146" marker-end="url(#ar)"/><text class="m" x="454" y="138" text-anchor="middle">made from</text>
+    <line class="ln" x1="325" y1="62" x2="325" y2="127" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+    <text class="s" x="335" y="99">same entity type: hard carbon anode</text>
+  </svg>
+  </div>
+  <p class="cap">Illustrative example drawn from the POC's papers; it is not an actual graph from Amplifi.</p>
+
+  <h3>Text to SQL: questions about tables</h3>
+  <p>For data that lives in a database, ingestion does not chunk anything. Instead <code>training-service</code> trains a Vanna model on the table layout, some written notes and example question-and-SQL pairs. The Text to SQL tool then turns a plain question into SQL, runs it and returns a table.</p>
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 84" role="img" aria-labelledby="d9t">
+    <title id="d9t">Text to SQL: question, trained model, SQL query, table answer</title>
+    <rect class="b0" x="30" y="10" width="140" height="60" rx="8"/><text class="h" x="100" y="34" text-anchor="middle">Question</text><text class="s" x="100" y="54" text-anchor="middle">Plain English</text>
+    <rect class="ba" x="190" y="10" width="140" height="60" rx="8"/><text class="h" x="260" y="34" text-anchor="middle">Trained model</text><text class="s" x="260" y="54" text-anchor="middle">Schema + examples</text>
+    <rect class="ba" x="350" y="10" width="140" height="60" rx="8"/><text class="h" x="420" y="34" text-anchor="middle">SQL query</text><text class="s" x="420" y="54" text-anchor="middle">Written for you</text>
+    <rect class="bc" x="510" y="10" width="140" height="60" rx="8"/><text class="h" x="580" y="34" text-anchor="middle">Table answer</text><text class="s" x="580" y="54" text-anchor="middle">Run on your database</text>
+    <line class="ln" x1="170" y1="40" x2="187" y2="40" marker-end="url(#ar)"/>
+    <line class="ln" x1="330" y1="40" x2="347" y2="40" marker-end="url(#ar)"/>
+    <line class="ln" x1="490" y1="40" x2="507" y2="40" marker-end="url(#ar)"/>
+  </svg>
+  </div>
+
+  <div class="cols">
+    <div>
+      <h3>Data sources</h3>
+      <p>Files can be uploaded directly, or pulled from Azure Blob Storage, AWS S3, Groove tickets and databases (Postgres, MySQL, Redshift, Microsoft Fabric). <code>monitoring-service</code> checks Azure and Groove for new files on a timetable kept by <code>celery-beat-service</code>.</p>
+      <h3>Destinations and workflows</h3>
+      <p>A workflow copies a dataset's vectors to another store, such as PG Vector or Databricks Vector Search, daily, weekly or monthly.</p>
+    </div>
+    <div>
+      <h3>MCP tools</h3>
+      <p>MCP (Model Context Protocol) lets an agent use tools that live outside Amplifi, such as a company search API. Tavily web search comes built in.</p>
+      <h3>Extraction</h3>
+      <p>A newer feature that pulls structured fields out of documents. It runs on Temporal in <code>extraction-worker</code>, so a crash resumes where it stopped. A setting switches it on.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PAGE 8 ============ -->
+<section class="sheet" id="services">
+  <div class="folio"><span>Services and queues</span><span>8 / 10</span></div>
+  <h2>The 12 services and their job queues</h2>
+  <p>The backend in <code>backend_new/services/</code> is 12 separate programs. Only one of them, the API, talks to the outside world. The other 11 wait for work.</p>
+
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 196" role="img" aria-labelledby="d10t">
+    <title id="d10t">Bar chart of services by job: ingestion 4, platform 3, files 2, knowledge 2, API 1</title>
+    <line class="grid" x1="130" y1="8" x2="130" y2="172"/><line class="grid" x1="230" y1="8" x2="230" y2="172"/>
+    <line class="grid" x1="330" y1="8" x2="330" y2="172"/><line class="grid" x1="430" y1="8" x2="430" y2="172"/>
+    <line class="grid" x1="530" y1="8" x2="530" y2="172"/>
+    <text class="m" x="130" y="188" text-anchor="middle">0</text><text class="m" x="230" y="188" text-anchor="middle">1</text>
+    <text class="m" x="330" y="188" text-anchor="middle">2</text><text class="m" x="430" y="188" text-anchor="middle">3</text>
+    <text class="m" x="530" y="188" text-anchor="middle">4 services</text>
+    <text class="h" x="120" y="34" text-anchor="end">Ingestion</text>
+    <rect class="bar" x="130" y="20" width="400" height="20" rx="4"><title>Ingestion: document, image, audio and video ingestion services</title></rect>
+    <text class="h" x="540" y="34">4</text>
+    <text class="h" x="120" y="66" text-anchor="end">Platform</text>
+    <rect class="bar" x="130" y="52" width="300" height="20" rx="4"><title>Platform: celery-beat, monitoring and extraction-worker</title></rect>
+    <text class="h" x="440" y="66">3</text>
+    <text class="h" x="120" y="98" text-anchor="end">Files</text>
+    <rect class="bar" x="130" y="84" width="200" height="20" rx="4"><title>Files: file-pull and file-compression</title></rect>
+    <text class="h" x="340" y="98">2</text>
+    <text class="h" x="120" y="130" text-anchor="end">Knowledge</text>
+    <rect class="bar" x="130" y="116" width="200" height="20" rx="4"><title>Knowledge: graph and training</title></rect>
+    <text class="h" x="340" y="130">2</text>
+    <text class="h" x="120" y="162" text-anchor="end">API</text>
+    <rect class="bar" x="130" y="148" width="100" height="20" rx="4"><title>API: fastapi-service</title></rect>
+    <text class="h" x="240" y="162">1</text>
+  </svg>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:29%">Service</th><th style="width:40%">Its job</th><th>Takes work from</th></tr></thead>
+    <tbody>
+      <tr><td><code>fastapi-service</code></td><td>The API for everything; puts jobs on queues</td><td>HTTP requests</td></tr>
+      <tr><td><code>document-ingestion-service</code></td><td>Documents into chunks and embeddings</td><td><code>ingestion_queue_v3</code></td></tr>
+      <tr><td><code>image-ingestion-service</code></td><td>OCR and vision for images</td><td><code>image_ingestion_queue_v3</code></td></tr>
+      <tr><td><code>audio-ingestion-service</code></td><td>Transcripts and speakers</td><td><code>audio_ingestion_queue_v3</code></td></tr>
+      <tr><td><code>video-ingestion-service</code></td><td>Audio and frames from video</td><td><code>video_ingestion_queue_v3</code></td></tr>
+      <tr><td><code>file-pull-service</code></td><td>Pulls from S3, Azure, Groove and databases</td><td><code>file_pull_queue_v3</code>, plus one queue per database type</td></tr>
+      <tr><td><code>file-compression-service</code></td><td>Checks and shrinks PDFs</td><td><code>file_compression_queue_v3</code>, <code>check_pdf_queue_v3</code></td></tr>
+      <tr><td><code>graph-service</code></td><td>Entities and relationships into Memgraph</td><td><code>build_graph_queue_v3</code></td></tr>
+      <tr><td><code>training-service</code></td><td>Trains Text-to-SQL (Vanna) models</td><td><code>vanna_training_queue_v3</code></td></tr>
+      <tr><td><code>celery-beat-service</code></td><td>The clock: schedules repeating jobs</td><td>Its own timetable, stored in Postgres</td></tr>
+      <tr><td><code>monitoring-service</code></td><td>Watches for new files and clears stuck documents</td><td>Jobs scheduled by celery-beat</td></tr>
+      <tr><td><code>extraction-worker</code></td><td>Runs the extraction workflows</td><td>Temporal</td></tr>
+    </tbody>
+  </table></div>
+  <p class="note"><b>How one job travels.</b> The API never does slow work itself. It writes a job onto a named queue in RabbitMQ and replies at once. The worker for that queue picks the job up, does the work and writes the result to Postgres. The app checks the status later. Locally, the Flower page at <code>localhost:5555</code> shows every queue and worker.</p>
+</section>
+
+<!-- ============ PAGE 9 ============ -->
+<section class="sheet" id="access">
+  <div class="folio"><span>Logins, roles, environments</span><span>9 / 10</span></div>
+  <h2>Logins, roles and where it runs</h2>
+
+  <h3>Two ways to log in</h3>
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 165" role="img" aria-labelledby="d11t">
+    <title id="d11t">People log in with email and password through LoginRadius and get a token checked against their role; programs exchange a client ID and secret for a one-hour token that only works on chat upload</title>
+    <rect class="b0" x="10" y="10" width="130" height="56" rx="8"/><text class="h" x="75" y="32" text-anchor="middle">Person</text><text class="s" x="75" y="51" text-anchor="middle">Email + password</text>
+    <rect class="bb" x="170" y="10" width="140" height="56" rx="8"/><text class="h" x="240" y="32" text-anchor="middle">LoginRadius</text><text class="s" x="240" y="51" text-anchor="middle">Outside login service</text>
+    <rect class="ba" x="340" y="10" width="140" height="56" rx="8"/><text class="h" x="410" y="32" text-anchor="middle">Token</text><text class="s" x="410" y="51" text-anchor="middle">Sent with each call</text>
+    <rect class="ba" x="510" y="10" width="160" height="56" rx="8"/><text class="h" x="590" y="32" text-anchor="middle">API checks the role</text><text class="s" x="590" y="51" text-anchor="middle">Is this action allowed?</text>
+    <line class="ln" x1="140" y1="38" x2="167" y2="38" marker-end="url(#ar)"/>
+    <line class="ln" x1="310" y1="38" x2="337" y2="38" marker-end="url(#ar)"/>
+    <line class="ln" x1="480" y1="38" x2="507" y2="38" marker-end="url(#ar)"/>
+    <rect class="b0" x="10" y="96" width="130" height="56" rx="8"/><text class="h" x="75" y="118" text-anchor="middle">Program</text><text class="s" x="75" y="137" text-anchor="middle">Client ID + secret</text>
+    <rect class="ba" x="170" y="96" width="140" height="56" rx="8"/><text class="h" x="240" y="118" text-anchor="middle">Token endpoint</text><text class="m" x="240" y="137" text-anchor="middle">/api_client/token</text>
+    <rect class="ba" x="340" y="96" width="140" height="56" rx="8"/><text class="h" x="410" y="118" text-anchor="middle">1-hour token</text><text class="s" x="410" y="137" text-anchor="middle">Whole organization</text>
+    <rect class="ba" x="510" y="96" width="160" height="56" rx="8"/><text class="h" x="590" y="118" text-anchor="middle">Only /chat/upload</text><text class="s" x="590" y="137" text-anchor="middle">Other routes refuse it</text>
+    <line class="ln" x1="140" y1="124" x2="167" y2="124" marker-end="url(#ar)"/>
+    <line class="ln" x1="310" y1="124" x2="337" y2="124" marker-end="url(#ar)"/>
+    <line class="ln" x1="480" y1="124" x2="507" y2="124" marker-end="url(#ar)"/>
+  </svg>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:16%">Role</th><th>What it can do</th></tr></thead>
+    <tbody>
+      <tr><td>Admin</td><td>Everything in the organization: users, settings and every workspace, without being added to each one</td></tr>
+      <tr><td>Developer</td><td>Build things: workspaces, datasets, ingestion, tools, agents and API clients. Most create and change routes need Admin or Developer.</td></tr>
+      <tr><td>Member</td><td>Use what already exists: search, chat, and view datasets and agents</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>How a change reaches the servers</h3>
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 80" role="img" aria-labelledby="d12t">
+    <title id="d12t">Deployment pipeline: merge code, GitHub Actions builds the image, Azure registry stores it, the gitops repo gets the new tag, ArgoCD deploys to AKS</title>
+    <rect class="b0" x="20" y="10" width="116" height="56" rx="8"/><text class="h" x="78" y="32" text-anchor="middle">Merge code</text><text class="s" x="78" y="51" text-anchor="middle">to dev or master</text>
+    <rect class="ba" x="151" y="10" width="116" height="56" rx="8"/><text class="h" x="209" y="32" text-anchor="middle">GitHub Actions</text><text class="s" x="209" y="51" text-anchor="middle">builds the image</text>
+    <rect class="ba" x="282" y="10" width="116" height="56" rx="8"/><text class="h" x="340" y="32" text-anchor="middle">Azure registry</text><text class="s" x="340" y="51" text-anchor="middle">stores the image</text>
+    <rect class="ba" x="413" y="10" width="116" height="56" rx="8"/><text class="h" x="471" y="32" text-anchor="middle">amplifi-gitops</text><text class="s" x="471" y="51" text-anchor="middle">new tag written</text>
+    <rect class="bc" x="544" y="10" width="116" height="56" rx="8"/><text class="h" x="602" y="32" text-anchor="middle">ArgoCD</text><text class="s" x="602" y="51" text-anchor="middle">deploys to AKS</text>
+    <line class="ln" x1="136" y1="38" x2="149" y2="38" marker-end="url(#ar)"/>
+    <line class="ln" x1="267" y1="38" x2="280" y2="38" marker-end="url(#ar)"/>
+    <line class="ln" x1="398" y1="38" x2="411" y2="38" marker-end="url(#ar)"/>
+    <line class="ln" x1="529" y1="38" x2="542" y2="38" marker-end="url(#ar)"/>
+  </svg>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:16%">Environment</th><th style="width:34%">API address</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Local</td><td><code>http://localhost:8085</code></td><td>Docker Compose with about 23 containers (<code>new-docker-compose-dev.yml</code>)</td></tr>
+      <tr><td>Dev</td><td><code>dev-api.dataamplifi.com</code></td><td>Deployed on every merge</td></tr>
+      <tr><td>Stage</td><td><code>stage-api.dataamplifi.com</code></td><td>Checked before a release</td></tr>
+      <tr><td>Prod</td><td>Set per deployment</td><td>Released from a version tag (vX.Y.Z) on master. Separate ONGC and Azure Marketplace deployments also exist.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">In the cloud everything runs on Azure Kubernetes Service, behind an Azure Application Gateway, with Azure PostgreSQL, Key Vault for secrets, Container Registry and Azure Monitor (<code>static/container_architecture.png</code>). Every API address ends in <code>/api/v3</code>.</p>
+</section>
+
+<!-- ============ PAGE 10 ============ -->
+<section class="sheet" id="code-map">
+  <div class="folio"><span>Code map</span><span>10 / 10</span></div>
+  <h2>The code map, and what it means for BRP</h2>
+
+  <div class="cols">
+    <div>
+      <h3>What is in the repository</h3>
+<pre class="tree">amplifi-dev/
+├─ backend_new/      <i>the live backend</i>
+│  ├─ services/      <i>12 programs</i>
+│  ├─ packages/      <i>shared code</i>
+│  └─ tests/e2e/     <i>API walkthrough</i>
+├─ frontend/         <i>web app (Next.js)</i>
+├─ docusaurus/docs/  <i>user docs</i>
+├─ backend/          <i>old, frozen: ignore</i>
+├─ nginx/ k8s/       <i>routing, deploys</i>
+└─ static/           <i>diagrams (some old)</i></pre>
+    </div>
+    <div>
+      <h3>How the backend code is written</h3>
+      <p>Python 3.12, with <b>uv</b> managing packages. Each service is a container image. Services never import each other; they share code only through <code>packages/</code>, all imported under one name, <code>shared.*</code>.</p>
+      <p>Settings come from environment variables in a <code>.env</code> file, which holds real secrets and is never committed.</p>
+    </div>
+  </div>
+
+  <h3>The shared packages, from bottom layer to top</h3>
+  <div class="fig">
+  <svg class="dg" viewBox="0 0 680 132" role="img" aria-labelledby="d13t">
+    <title id="d13t">Package layers: amplifi-base, amplifi-db, amplifi-platform, amplifi-data, then ingestion, graph and text2sql on top; each package may only use the ones below it</title>
+    <rect class="bc" x="10" y="45" width="112" height="44" rx="7"/><text class="mh" x="66" y="62" text-anchor="middle">amplifi-base</text><text class="s" x="66" y="79" text-anchor="middle">settings, enums</text>
+    <rect class="bc" x="144" y="45" width="112" height="44" rx="7"/><text class="mh" x="200" y="62" text-anchor="middle">amplifi-db</text><text class="s" x="200" y="79" text-anchor="middle">tables, schemas</text>
+    <rect class="bc" x="278" y="45" width="112" height="44" rx="7"/><text class="mh" x="334" y="62" text-anchor="middle">amplifi-platform</text><text class="s" x="334" y="79" text-anchor="middle">logins, AI, queues</text>
+    <rect class="bc" x="412" y="45" width="112" height="44" rx="7"/><text class="mh" x="468" y="62" text-anchor="middle">amplifi-data</text><text class="s" x="468" y="79" text-anchor="middle">reads and writes</text>
+    <rect class="ba" x="550" y="5" width="120" height="34" rx="7"/><text class="mh" x="610" y="26" text-anchor="middle">amplifi-ingestion</text>
+    <rect class="ba" x="550" y="50" width="120" height="34" rx="7"/><text class="mh" x="610" y="71" text-anchor="middle">amplifi-graph</text>
+    <rect class="ba" x="550" y="95" width="120" height="34" rx="7"/><text class="mh" x="610" y="116" text-anchor="middle">amplifi-text2sql</text>
+    <line class="ln" x1="144" y1="67" x2="125" y2="67" marker-end="url(#ar)"/>
+    <line class="ln" x1="278" y1="67" x2="259" y2="67" marker-end="url(#ar)"/>
+    <line class="ln" x1="412" y1="67" x2="393" y2="67" marker-end="url(#ar)"/>
+    <line class="ln" x1="550" y1="22" x2="527" y2="55" marker-end="url(#ar)"/>
+    <line class="ln" x1="550" y1="67" x2="527" y2="67" marker-end="url(#ar)"/>
+    <line class="ln" x1="550" y1="112" x2="527" y2="79" marker-end="url(#ar)"/>
+  </svg>
+  </div>
+  <p class="cap">Arrows mean "uses". A package may only use the layers to its left. Newer packages for extraction, page layout and vision sit alongside these.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th style="width:30%">To understand…</th><th>Open</th></tr></thead>
+    <tbody>
+      <tr><td>Every API route</td><td><code>backend_new/services/fastapi-service/fastapi_service/api/</code></td></tr>
+      <tr><td>The chat routes</td><td><code>…/api/v2/endpoints/chat.py</code></td></tr>
+      <tr><td>The agent loop</td><td><code>…/fastapi_service/utils/dynamic_agent.py</code></td></tr>
+      <tr><td>The search tools</td><td><code>…/fastapi_service/tools/system_tools/</code></td></tr>
+      <tr><td>Database tables</td><td><code>backend_new/packages/amplifi-db/src/shared/models/</code></td></tr>
+      <tr><td>All settings</td><td><code>backend_new/packages/amplifi-base/src/shared/config.py</code></td></tr>
+      <tr><td>A full API walkthrough</td><td><code>backend_new/tests/e2e/workflows/shared_workflow_steps.py</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="key">
+    <h3>What this means for the Battery POC</h3>
+    <ul>
+      <li>BRP does not change Amplifi. It calls one route, <code>POST /api/v3/chat/upload</code>, through a small server-side proxy that holds the API client secret.</li>
+      <li>Papers, datasets, tools and agents keep being managed in the Amplifi web app.</li>
+      <li><code>output_schema</code> can force the JSON shapes BRP's screens need.</li>
+      <li>Open points, such as question splitting, page numbers and timeouts, are listed in <code>docs/amplifi-api-notes.md</code>.</li>
+    </ul>
+  </div>
+</section>

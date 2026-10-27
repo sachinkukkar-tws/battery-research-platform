@@ -1,0 +1,43 @@
+.status {
+  display: inline-block;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.checked { background: var(--ok-soft); color: var(--success-ink); }
+.extracted { background: var(--warn-soft); color: var(--warning-ink); }
+.harvested { background: var(--hover); color: var(--slate); }
+.chip {
+  display: inline-block;
+  font-size: var(--text-xs);
+  padding: 2px 10px;
+  border-radius: 12px;
+  background: var(--hover);
+  color: var(--slate);
+  white-space: nowrap;
+  font-weight: 600;
+}
+.notReported { color: var(--muted); }
+
+.mark {
+  border-radius: 50%;
+  background: var(--btn);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.mark i { display: block; border-radius: 2px; background: #fff; }
+.mark i + i { background: var(--warning); }
+.sm { width: 30px; height: 30px; gap: 3px; }
+.sm i { width: 3px; height: 13px; }
+.sm i + i { height: 9px; }
+.md { width: 36px; height: 36px; gap: 4px; }
+.md i { width: 4px; height: 15px; }
+.md i + i { height: 10px; }
+.lg { width: 52px; height: 52px; gap: 5px; }
+.lg i { width: 5px; height: 22px; }
+.lg i + i { height: 15px; }

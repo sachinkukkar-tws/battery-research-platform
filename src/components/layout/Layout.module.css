@@ -1,0 +1,122 @@
+.wrapper { display: grid; grid-template-columns: auto minmax(0, 1fr); min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: var(--sidebar-w);
+  background: var(--card);
+  box-shadow: 0 16px 38px -12px rgba(0, 0, 0, 0.18);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  transition: width 0.28s var(--ease);
+}
+.logo { display: flex; align-items: center; gap: 10px; padding: 18px 8px 18px 14px; margin: 0 10px; border-bottom: 1px solid var(--rule); }
+.logoText { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; line-height: 1.4; white-space: nowrap; }
+.collapseBtn {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.collapseBtn:hover { color: var(--primary-ink); border-color: var(--primary); }
+.collapseBtn svg { width: 16px; height: 16px; transition: transform 0.28s var(--ease); }
+.sideNote { padding: 18px 26px; font-size: 12px; color: var(--muted); margin-top: auto; }
+
+:global(.side-collapsed) .sidebar { width: var(--sidebar-w-collapsed); }
+:global(.side-collapsed) .logo { flex-direction: column; justify-content: center; gap: 12px; margin: 0 10px; padding: 16px 0; }
+:global(.side-collapsed) .logoText, :global(.side-collapsed) .sideNote { display: none; }
+:global(.side-collapsed) .collapseBtn { margin-left: 0; }
+:global(.side-collapsed) .collapseBtn svg { transform: rotate(180deg); }
+
+.scrim { display: none; }
+
+/* Main column */
+.main { min-width: 0; display: flex; flex-direction: column; }
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px var(--gutter);
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: var(--bg);
+}
+.burger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.burger svg { width: 20px; height: 20px; }
+.pageTitle { margin-right: auto; font-size: var(--text-xl); font-weight: 400; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mode {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: var(--warn-soft);
+  color: var(--warning-ink);
+  white-space: nowrap;
+}
+.modeLive { background: var(--ok-soft); color: var(--success-ink); }
+
+.content { padding: 6px var(--gutter) 10px; outline: none; }
+.footer { padding: 18px var(--gutter) 26px; color: var(--muted); font-size: 12px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+/* Ask Amplifi: messages scroll, composer stays at the bottom */
+.chatMode .main { height: 100vh; height: 100dvh; overflow: hidden; }
+.chatMode .bar { position: static; }
+.chatMode .content { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0; }
+
+@media (max-width: 991px) {
+  :root { --gutter: 16px; }
+  .wrapper { grid-template-columns: 1fr; }
+  .sidebar, :global(.side-collapsed) .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--sidebar-w);
+    transform: translateX(-105%);
+    visibility: hidden;
+    transition: transform 0.3s var(--ease), visibility 0s linear 0.3s;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  :global(.side-collapsed) .logoText, :global(.side-collapsed) .sideNote { display: revert; }
+  :global(.side-collapsed) .logo { flex-direction: row; justify-content: flex-start; gap: 10px; padding: 18px 8px 18px 14px; }
+  .collapseBtn { display: none; }
+  .navOpen .sidebar { transform: none; visibility: visible; transition: transform 0.3s var(--ease); }
+  .navOpen .scrim { display: block; position: fixed; inset: 0; background: var(--scrim); z-index: 19; }
+  .burger { display: inline-flex; }
+  .bar { padding: 12px var(--gutter); gap: 10px; }
+  .bar::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 15; }
+}
+
+@media (max-width: 600px) {
+  .chatMode .mode { display: none; }
+  .pageTitle { flex: 1; min-width: 0; }
+}
