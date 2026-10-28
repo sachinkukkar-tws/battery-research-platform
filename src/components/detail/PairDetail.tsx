@@ -1,7 +1,7 @@
 import { Button } from "@/components/common/Button";
 import { Formula } from "@/components/common/Badges";
 import { pairName } from "@/domain/pairs";
-import { useAskAbout } from "@/hooks/useAskAbout";
+import { useAskAbout, useCanAskAbout } from "@/hooks/useAskAbout";
 import { useDetailDialog } from "@/state/DetailDialogContext";
 import { useResearchData } from "@/state/ResearchDataContext";
 import { FindWithAmplifi } from "./FindWithAmplifi";
@@ -11,6 +11,7 @@ export function PairDetail({ recordId, titleId }: { recordId: string; titleId: s
   const { recordById, dataset } = useResearchData();
   const { openPaper } = useDetailDialog();
   const askAbout = useAskAbout();
+  const canAsk = useCanAskAbout();
   const r = recordById(recordId);
 
   if (!r) {
@@ -81,7 +82,7 @@ export function PairDetail({ recordId, titleId }: { recordId: string; titleId: s
         </div>
       </dl>
       <div className={styles.actions}>
-        <Button onClick={() => askAbout(r.paper)}>Ask Amplifi about {r.paper}</Button>
+        {canAsk(r.paper) && <Button onClick={() => askAbout(r.paper)}>Ask Amplifi about {r.paper}</Button>}
         <Button variant="quiet" onClick={() => openPaper(r.paper)}>
           Open {r.paper} in the Library
         </Button>

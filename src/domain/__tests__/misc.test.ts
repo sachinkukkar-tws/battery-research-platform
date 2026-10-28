@@ -15,6 +15,17 @@ describe("citations", () => {
     ]);
     expect(extractCitationIds("[C12] [C12] [N1]")).toEqual(["C12", "N1"]);
   });
+
+  it("reads citations that have extra words, several IDs or a file name inside the brackets", () => {
+    const text = "A [CP01, laboratory measurement], [CP02; lab study], [CP03, CP04], [CP05_Huang_2026.pdf] and [lab study; client paper].";
+    expect(extractCitationIds(text)).toEqual(["CP01", "CP02", "CP03", "CP04", "CP05"]);
+    expect(splitCitedText("94.8% [CP01, laboratory measurement].")).toEqual([
+      { kind: "text", text: "94.8% " },
+      { kind: "cite", paperId: "CP01" },
+      { kind: "text", text: " (laboratory measurement)" },
+      { kind: "text", text: "." },
+    ]);
+  });
 });
 
 describe("chemical formulae", () => {

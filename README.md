@@ -4,7 +4,7 @@ A React frontend for the Battery Science proof of concept. Researchers explore b
 
 ![The Ask Amplifi page answering from CP10 with the paper filter set, showing clickable CP10 citations](docs/images/ask-amplifi.png)
 
-> **Status, 28 October 2026.** Ask Amplifi is live: it answers from the 10 client papers (CP01 to CP10) through a local Amplifi, and citations such as `[CP10]` open the paper. In a 15-question test it scored 90%, with no invented numbers. All other pages use the bundled sample data.
+> **Status, 28 October 2026.** Ask Amplifi is live: it answers from the 10 client papers (CP01 to CP10) through a local Amplifi, and citations such as `[CP10]` open the paper. In a 15-question test it scored 91%, with no invented numbers. All other pages use the bundled sample data.
 
 **Contents:** [Quick start](#quick-start) · [Live Amplifi chat](#live-amplifi-chat) · [How it works](#how-it-works) · [Configuration](#configuration) · [Commands](#commands) · [Do and don't](#do-and-dont) · [Troubleshooting](#troubleshooting) · [Testing](#testing) · [Project structure](#project-structure) · [Known limitations](#known-limitations) · [More documentation](#more-documentation)
 
@@ -66,7 +66,10 @@ VITE_CHAT_MODE=live
 VITE_AMPLIFI_PROXY_URL=/amplifi
 AMPLIFI_PROXY_TARGET=http://localhost:8787
 VITE_REQUEST_TIMEOUT_MS=120000
+VITE_AMPLIFI_PAPERS=CP01,CP02,CP03,CP04,CP05,CP06,CP07,CP08,CP09,CP10
 ```
+
+`VITE_AMPLIFI_PAPERS` lists the papers loaded in Amplifi, so the chat offers only those. Add the IDs of any papers you load later.
 
 **3. Configure the proxy.** Copy `.env.amplifi.example` to `.env.amplifi` and fill it in. This file is gitignored and only the proxy reads it, so the login never reaches the browser.
 
@@ -109,7 +112,7 @@ flowchart LR
 - **The browser never talks to Amplifi.** The Vite dev server forwards `/amplifi` to the proxy, and only the proxy holds the Amplifi login and token.
 - **One Amplifi chat per conversation.** The proxy creates an Amplifi chat session for the first question of each chat, so follow-up questions work. **New chat** starts a new one.
 - **Every question asks Amplifi to search first.** The proxy adds a short note to each question, and adds *"Answer using only paper CPxx"* when a paper is picked in the list.
-- **Answers are rendered safely.** Markdown is shown as headings, lists and tables; raw HTML is never rendered; `[CP01]` markers become buttons that open the paper in the Library.
+- **Answers are rendered safely.** Markdown is shown as headings, lists and tables; raw HTML is never rendered; citation markers become buttons that open the paper in the Library, including ones with a note such as `[CP01, laboratory measurement]`.
 
 ```mermaid
 sequenceDiagram
@@ -140,6 +143,7 @@ The browser's side of this contract is in `src/services/amplifiApi.ts`. If Ampli
 | `VITE_CHAT_MODE` | same as `VITE_DATA_MODE` | `live` sends Ask Amplifi to the proxy |
 | `VITE_DATA_MODE` | `mock` | `mock` uses sample data; `live` calls the platform API for every page (not built yet) |
 | `VITE_AMPLIFI_PROXY_URL` | `/amplifi` | Where the browser sends chat requests |
+| `VITE_AMPLIFI_PAPERS` | every paper | IDs of the papers loaded in Amplifi, comma-separated. With live chat, only these appear in the paper list and on "Ask Amplifi about" buttons |
 | `VITE_REQUEST_TIMEOUT_MS` | `30000` | Request timeout; use `120000` with live chat |
 | `VITE_ROUTER_MODE` | `browser` | `browser`, `hash` (static hosting) or `memory` (embedded demos) |
 | `AMPLIFI_PROXY_TARGET` | not set | Dev server only: where `/amplifi` is forwarded, normally `http://localhost:8787` |
@@ -175,7 +179,8 @@ The browser's side of this contract is in `src/services/amplifiApi.ts`. If Ampli
 - Keep the Amplifi login only in `.env.amplifi`.
 - Restart the proxy after changing `.env.amplifi` or `server/amplifi-proxy.mjs`, and restart `npm run dev` after changing `.env`. Both read their settings only when they start.
 - Click **New chat** before each test question. Amplifi remembers the whole chat, so earlier answers can affect later ones.
-- Ask about one or two papers at a time, and pick papers CP01 to CP10 only. Those are the papers loaded in Amplifi.
+- Ask about one or two papers at a time. Questions across many papers can miss one.
+- Keep `VITE_AMPLIFI_PAPERS` in step with the papers loaded in Amplifi.
 - Keep the agent's prompt search-first, with no answers written into the prompt.
 - Check important numbers against the paper. The citation buttons open it.
 
@@ -201,13 +206,13 @@ The browser's side of this contract is in `src/services/amplifiApi.ts`. If Ampli
 
 ## Testing
 
-`npm test` runs 74 tests across nine files:
+`npm test` runs 79 tests across nine files:
 
 - **Domain logic:** filters, comparisons, chart maths, review rules, citations and the Markdown conversion of Amplifi answers.
 - **Services:** HTTP error handling, response validation, and the proxy contract, including a check that the browser never sends credentials.
 - **Whole-app flows:** the Library, Review, uploads and Ask Amplifi, including follow-ups, the paper filter and the live badge.
 
-**Answer quality.** On 28 October we asked Amplifi 15 questions through this app and scored each answer against the original papers. It scored 135 of 150 points (90%): 14 answers passed, 1 was partly right, and every number was in the paper it cited.
+**Answer quality.** On 28 October we asked Amplifi 15 questions through this app and scored each answer against the original papers. It scored 137 of 150 points (91%): 14 answers passed, 1 was partly right, and every number was in the paper it cited.
 
 ![Score per question in the 28 October test: 14 of 15 passed the mark of 8 out of 10](docs/images/test-scores.png)
 
@@ -232,9 +237,8 @@ Built with React 18, TypeScript, Vite, React Router, CSS Modules and Vitest. Cha
 ## Known limitations
 
 - **Only Ask Amplifi is live.** The other pages use sample data, and *Find with Amplifi* gives a demo result.
-- **Only the 10 client papers are in Amplifi.** The paper list also shows the 27 Theme A papers, which aren't loaded yet.
+- **Only the 10 client papers are in Amplifi.** The Library still lists all 37 papers; with `VITE_AMPLIFI_PAPERS` set, the chat offers only the 10.
 - **Questions across several papers can miss a paper.** The agent runs one search rather than one per paper.
-- **Some citations aren't clickable.** When the agent writes extra words inside the brackets, such as `[CP01, laboratory measurement]`, the citation shows as plain text. About half the citations in the test looked like this.
 - **Answers vary between runs.** This Amplifi version doesn't pass the agent's temperature setting to the model.
 - **No streaming.** The whole answer arrives at once, usually after 15 to 25 seconds.
 

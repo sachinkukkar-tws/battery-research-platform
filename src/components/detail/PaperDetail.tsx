@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/common/Button";
 import { PIPELINE_STEPS, pipelineStage } from "@/domain/library";
 import { plural } from "@/domain/format";
-import { useAskAbout } from "@/hooks/useAskAbout";
+import { useAskAbout, useCanAskAbout } from "@/hooks/useAskAbout";
 import { useDetailDialog } from "@/state/DetailDialogContext";
 import { useResearchData } from "@/state/ResearchDataContext";
 import { useViewState } from "@/state/ViewStateContext";
@@ -13,6 +13,7 @@ export function PaperDetail({ paperId, titleId }: { paperId: string; titleId: st
   const { close } = useDetailDialog();
   const { showPairsFor } = useViewState();
   const askAbout = useAskAbout();
+  const canAsk = useCanAskAbout();
   const navigate = useNavigate();
   const paper = paperById(paperId);
 
@@ -23,9 +24,11 @@ export function PaperDetail({ paperId, titleId }: { paperId: string; titleId: st
           {paperId} isn’t in the Library
         </h2>
         <p className={styles.meta}>The paper may have been removed, or it isn’t loaded yet. Ask Amplifi can still search it if it’s in the knowledge base.</p>
-        <div className={styles.actions}>
-          <Button onClick={() => askAbout(paperId)}>Ask Amplifi about {paperId}</Button>
-        </div>
+        {canAsk(paperId) && (
+          <div className={styles.actions}>
+            <Button onClick={() => askAbout(paperId)}>Ask Amplifi about {paperId}</Button>
+          </div>
+        )}
       </>
     );
   }
@@ -67,7 +70,7 @@ export function PaperDetail({ paperId, titleId }: { paperId: string; titleId: st
         </dl>
       )}
       <div className={styles.actions}>
-        <Button onClick={() => askAbout(paper.id)}>Ask Amplifi about {paper.id}</Button>
+        {canAsk(paper.id) && <Button onClick={() => askAbout(paper.id)}>Ask Amplifi about {paper.id}</Button>}
         {waiting > 0 && (
           <Button
             variant="quiet"

@@ -191,6 +191,27 @@ describe("Ask Amplifi", () => {
     expect(await screen.findByRole("heading", { name: /Pore-stitching engineering/ })).toBeInTheDocument();
   });
 
+  it("makes a citation clickable when Amplifi writes extra words inside the brackets", async () => {
+    const ask = vi.fn().mockResolvedValue({ text: "ICE of 94.8% [CP01, laboratory measurement].", citations: [], origin: "amplifi", conversationId: null });
+    const { user } = renderApp("/ask", { amplifi: { ask, findValue: vi.fn() } });
+    await user.type(await screen.findByLabelText("Message Amplifi"), "ICE?{Enter}");
+    expect(await screen.findByText(/\(laboratory measurement\)/)).toBeInTheDocument();
+    expect(screen.queryByText(/\[CP01/)).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Source CP01, open in the Library" }));
+    expect(await screen.findByRole("heading", { name: /Pore-stitching engineering/ })).toBeInTheDocument();
+  });
+
+  it("offers only the papers loaded in Amplifi when the chat is live", async () => {
+    const config = { ...readConfig({ VITE_CHAT_MODE: "live", VITE_AMPLIFI_PAPERS: "CP01,CP02" }), routerMode: "memory" as const };
+    const { user } = renderApp("/ask", { config });
+    const list = await screen.findByLabelText("Which papers to search");
+    expect(within(list).getAllByRole("option").map((o) => (o as HTMLOptionElement).value)).toEqual(["", "CP01", "CP02"]);
+    await user.click(screen.getByRole("link", { name: "Library" }));
+    await user.click(await screen.findByRole("button", { name: /Lithium ion battery degradation/ }));
+    expect(await screen.findByRole("heading", { name: /Lithium ion battery degradation/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ask Amplifi about/ })).toBeNull();
+  });
+
   it("labels Ask Amplifi as live when only the chat is connected", async () => {
     const config = { ...readConfig({ VITE_CHAT_MODE: "live" }), routerMode: "memory" as const };
     const { user } = renderApp("/ask", { config });

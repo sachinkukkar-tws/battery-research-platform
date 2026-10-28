@@ -12,6 +12,12 @@ describe("answerToMarkdown", () => {
     );
   });
 
+  it("keeps the note beside the button when a citation has extra words, and links every ID", () => {
+    expect(answerToMarkdown("94.8% [CP01, laboratory measurement] and [CP03, CP04].")).toBe(
+      "94.8% [CP01](#cite-CP01) (laboratory measurement) and [CP03](#cite-CP03) [CP04](#cite-CP04).",
+    );
+  });
+
   it("keeps a bullet character that is part of a sentence", () => {
     expect(answerToMarkdown("Na • K comparison")).toBe("Na • K comparison");
   });

@@ -5,6 +5,7 @@ import { AssistantMessage } from "@/components/chat/AssistantMessage";
 import { Composer } from "@/components/chat/Composer";
 import { Welcome } from "@/components/chat/Welcome";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { canAskAbout } from "@/services/config";
 import { useChat } from "@/state/ChatContext";
 import { useDetailDialog } from "@/state/DetailDialogContext";
 import { useResearchData } from "@/state/ResearchDataContext";
@@ -122,7 +123,7 @@ export function AskAmplifiPage() {
         <Composer
           busy={chat.isBusy}
           scope={chat.scope}
-          papers={library}
+          papers={library.filter((p) => canAskAbout(config, p.id))}
           focusRequest={chat.focusRequest}
           autoFocus={desktop}
           onScopeChange={chat.setScope}
