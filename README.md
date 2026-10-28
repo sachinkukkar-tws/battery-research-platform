@@ -1,82 +1,64 @@
 # Battery Research Platform
 
-A React frontend for the Battery Science proof of concept. Researchers explore battery research papers, review the values extracted from them, compare anode and cathode materials, chart the findings, and ask **Amplifi** questions about the papers.
+A React frontend for the Battery Science proof of concept. Researchers explore battery research papers, compare anode and cathode materials, chart the results, and **ask Amplifi questions that are answered from the papers, with citations**.
 
-> **Status.** The Ask Amplifi page is connected to a live Amplifi chat app through a small server-side proxy, and answers from the ingested client papers with clickable citations. The other pages run on the bundled sample data.
+![The Ask Amplifi page answering from CP10 with the paper filter set, showing clickable CP10 citations](docs/images/ask-amplifi.png)
 
-## Contents
+> **Status, 28 October 2026.** Ask Amplifi is live: it answers from the 10 client papers (CP01 to CP10) through a local Amplifi, and citations such as `[CP10]` open the paper. In a 15-question test it scored 90%, with no invented numbers. All other pages use the bundled sample data.
 
-- [Overview](#overview)
-- [Quick start](#quick-start)
-- [Commands](#commands)
-- [Connecting to Amplifi](#connecting-to-amplifi)
-- [How the Amplifi connection works](#how-the-amplifi-connection-works)
-- [Configuration](#configuration)
-- [Data modes](#data-modes)
-- [Project structure](#project-structure)
-- [Architecture](#architecture)
-- [Testing](#testing)
-- [Accessibility](#accessibility)
-- [Security](#security)
-- [Troubleshooting](#troubleshooting)
-- [Known limitations](#known-limitations)
-- [Further documentation](#further-documentation)
+**Contents:** [Quick start](#quick-start) · [Live Amplifi chat](#live-amplifi-chat) · [How it works](#how-it-works) · [Configuration](#configuration) · [Commands](#commands) · [Do and don't](#do-and-dont) · [Troubleshooting](#troubleshooting) · [Testing](#testing) · [Project structure](#project-structure) · [Known limitations](#known-limitations) · [More documentation](#more-documentation)
 
----
+## What the app does
 
-## Overview
-
-| Page | What it does | Data |
+| Page | What you can do | Data |
 | --- | --- | --- |
-| **Workspace** | Find tested anode and cathode pairs, compare materials, and spot untested combinations | Sample data |
-| **Library** | Search and filter the papers, and open a paper's details | Sample data |
+| **Workspace** | Find tested anode and cathode pairs, compare materials, spot untested combinations | Sample data |
+| **Library** | Search and filter the papers, open a paper's details | Sample data |
 | **Review** | Approve or correct values extracted from the papers | Sample data |
 | **Charts** | Plot and rank materials by their reported properties | Sample data |
-| **Ask Amplifi** | Ask questions about the papers and get cited answers, with follow-up questions in the same conversation | **Live Amplifi** when connected, otherwise demo answers |
+| **Ask Amplifi** | Ask about the papers and get cited answers, with follow-up questions in the same chat | **Live Amplifi** when connected |
 
-The top bar shows which kind of data you are looking at: **Live Amplifi** on the chat page when it is connected, and **Demo data** elsewhere.
-
-This app is a refactor of the single-file prototype `battery_platform_demo.html`. Every screen and workflow from the prototype was kept; [docs/MIGRATION.md](docs/MIGRATION.md) maps each feature to its new home. The upload screen has been removed from the navigation for the demo; its code remains at `/upload`.
+The badge in the top bar says which data you are seeing: **Live Amplifi** on the chat page when it is connected, **Demo data** everywhere else.
 
 ## Quick start
 
-Requires **Node.js 20 or later**.
+Needs **Node.js 20 or later**. With no configuration the app runs on sample data and nothing leaves the browser.
 
 ```bash
 npm ci
 npm run dev
 ```
 
-Open <http://localhost:5173>. With no configuration the app runs entirely on sample data, and nothing leaves the browser.
+Open <http://localhost:5173>.
 
-To connect the chat to Amplifi, follow [Connecting to Amplifi](#connecting-to-amplifi).
+## Live Amplifi chat
 
-## Commands
+You need Amplifi running with the client papers ingested, a chat app whose agent searches them, and an Amplifi login that can use that chat app.
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Development server with hot reload at <http://localhost:5173> |
-| `npm run amplifi:proxy` | Starts the Amplifi proxy at <http://localhost:8787> (reads `.env.amplifi`) |
-| `npm run build` | Type check, then a production build into `dist/` |
-| `npm run preview` | Serves the production build locally |
-| `npm test` | Runs all tests once (`npm run test:watch` keeps them running) |
-| `npm run lint` | ESLint, including the React hooks rules |
-| `npm run typecheck` | TypeScript only |
-| `npm run build:standalone` | One self-contained HTML file in `dist-standalone/`, for sharing a demo |
+**1. Start Amplifi.** Its API must answer at <http://localhost:8085/health>.
 
-## Connecting to Amplifi
+<details>
+<summary>Starting local Amplifi on a laptop (lean mode)</summary>
 
-### Before you start
+Start Docker Desktop and wait for *Engine running*. Then stop the containers that start by themselves but aren't needed, and start the three that don't start by themselves. The commands work from any folder:
 
-You need:
+```bash
+docker stop extraction-worker grafana prometheus pushgateway flower temporal-ui monitoring-service training-service audio-ingestion-service file-pull-service graph-service
+```
 
-- **Amplifi running**, with its API reachable (locally: `http://localhost:8085/api/v3`).
-- **An Amplifi chat app** whose agent answers from the ingested papers. Test it in Amplifi's own UI first.
-- **An Amplifi login** (email and password) that can use that chat app.
+```bash
+docker start rabbitmq_dev amplifi-vault-1
+```
 
-### Step 1. Configure the frontend
+```bash
+docker start nginx
+```
 
-Create `.env` in this folder. It holds no secrets:
+`docker ps` should then list 12 containers. If <http://localhost:8085/health> returns *502 Bad Gateway*, run `docker restart nginx`.
+
+</details>
+
+**2. Configure this app.** Create `.env` in this folder. It holds no secrets.
 
 ```ini
 VITE_DATA_MODE=mock
@@ -86,22 +68,16 @@ AMPLIFI_PROXY_TARGET=http://localhost:8787
 VITE_REQUEST_TIMEOUT_MS=120000
 ```
 
-### Step 2. Configure the proxy
-
-Copy `.env.amplifi.example` to `.env.amplifi` and fill it in. This file is gitignored and is read only by the proxy, so the login never reaches the browser.
+**3. Configure the proxy.** Copy `.env.amplifi.example` to `.env.amplifi` and fill it in. This file is gitignored and only the proxy reads it, so the login never reaches the browser.
 
 ```ini
 AMPLIFI_BASE_URL=http://localhost:8085/api/v3
 AMPLIFI_EMAIL=<your Amplifi login email>
 AMPLIFI_PASSWORD=<your Amplifi login password>
-AMPLIFI_CHAT_APP_ID=<your chat app ID>
+AMPLIFI_CHAT_APP_ID=<the chat app ID from Amplifi's address bar>
 ```
 
-The chat app ID is in Amplifi's address bar when the chat app is open.
-
-### Step 3. Start both servers
-
-In two terminals:
+**4. Start the proxy and the website,** each in its own terminal in this folder:
 
 ```bash
 npm run amplifi:proxy
@@ -111,171 +87,165 @@ npm run amplifi:proxy
 npm run dev
 ```
 
-### Step 4. Check the connection
+**5. Check it works.**
 
-1. Open <http://localhost:8787/amplifi/ping>. It should show `"ok": true`, which means the proxy logged in to Amplifi.
-2. Open <http://localhost:5173/ask>. The top bar should say **Live Amplifi**.
-3. Ask *"What is the ICE of CP01's hard carbon?"* The answer should give **94.8%** with a **CP01** citation.
+1. <http://localhost:8787/amplifi/ping> shows `"ok":true`, so the proxy has logged in to Amplifi.
+2. <http://localhost:5173/ask> shows the **Live Amplifi** badge.
+3. Pick **CP10** in the paper list and ask *"Which electrolyte gave the higher ICE?"* A good answer gives **92.2%** for the ether-based electrolyte against **87.49%** for the ester-based one, with **CP10** citations.
 
-## How the Amplifi connection works
+## How it works
 
-```
-Browser (Ask Amplifi page)
-   |  POST /amplifi/chat
-   v
-Vite dev server  (forwards /amplifi to AMPLIFI_PROXY_TARGET)
-   v
-Proxy  server/amplifi-proxy.mjs, port 8787  (holds the Amplifi login)
-   |  POST /login/access-token
-   |  POST /chat_app/{id}/chat_session
-   |  POST /chat
-   v
-Amplifi API  ->  agent and search tools  ->  ingested papers
+```mermaid
+flowchart LR
+    subgraph laptop["Your laptop"]
+        W["BRP website<br/>localhost:5173"] -->|"/amplifi/chat"| P["Amplifi proxy<br/>server/amplifi-proxy.mjs<br/>localhost:8787"]
+        P -->|"login, chat session, /chat"| A["Amplifi API<br/>localhost:8085"]
+        A --> G["Agent-01<br/>search-first prompt"]
+        G -->|"hybrid and vector search"| K[("10 client papers<br/>523 passages")]
+    end
+    G -.->|"GPT-4.1 and<br/>text-embedding-3-large"| Z["Azure OpenAI"]
 ```
 
-1. **Log in.** The proxy signs in with `POST /login/access-token` and keeps the token. It signs in again after 50 minutes, or straight away if Amplifi rejects the token.
-2. **One session per conversation.** For each new conversation, the proxy creates an Amplifi chat session with `POST /chat_app/{id}/chat_session`. Amplifi stores the history in that session, so follow-up questions work. *New chat* starts a new session.
-3. **Ask.** Each question goes to `POST /chat` with the chat app ID, the session ID and the question. If the question is limited to one paper, the proxy adds *"Answer using only paper CPxx."*
-4. **Answer.** The proxy returns the answer text and the session ID. Agent failures, which Amplifi returns as HTTP 200 with an `error` field, become clear error messages.
+- **The browser never talks to Amplifi.** The Vite dev server forwards `/amplifi` to the proxy, and only the proxy holds the Amplifi login and token.
+- **One Amplifi chat per conversation.** The proxy creates an Amplifi chat session for the first question of each chat, so follow-up questions work. **New chat** starts a new one.
+- **Every question asks Amplifi to search first.** The proxy adds a short note to each question, and adds *"Answer using only paper CPxx"* when a paper is picked in the list.
+- **Answers are rendered safely.** Markdown is shown as headings, lists and tables; raw HTML is never rendered; `[CP01]` markers become buttons that open the paper in the Library.
 
-In the browser, answers are rendered from Markdown (headings, bold, lists and tables). Inline markers such as `[CP01]` become buttons that open the paper in the Library. Raw HTML in an answer is never rendered.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as You
+    participant W as BRP website
+    participant P as Proxy (8787)
+    participant A as Amplifi (8085)
+    U->>W: Ask a question
+    W->>P: POST /amplifi/chat
+    P->>A: POST /login/access-token (token reused for 50 minutes)
+    P->>A: POST /chat_app/{id}/chat_session (first question of a chat)
+    P->>A: POST /chat (question plus the search note)
+    A->>A: Agent-01 searches the papers and GPT-4.1 writes the answer
+    A-->>P: Answer with [CPxx] markers
+    P-->>W: Answer and conversation ID
+    W-->>U: Formatted answer with citation buttons
+```
 
-The browser's side of the contract is defined in `src/services/amplifiApi.ts`. Only `src/services/` and the proxy need to change if Amplifi's API changes; components never call `fetch` themselves.
+The browser's side of this contract is in `src/services/amplifiApi.ts`. If Amplifi's API changes, only `src/services/` and the proxy need to change; components never call `fetch` themselves.
 
 ## Configuration
 
-### Frontend (`.env`)
-
-All `VITE_` variables are read once at startup in `src/services/config.ts`. Invalid values fall back to safe defaults.
+**This app (`.env`).** `VITE_` variables are compiled into the browser bundle, so they never hold secrets.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `VITE_DATA_MODE` | `mock` | `mock` uses the sample data; `live` calls the platform API for every page |
-| `VITE_CHAT_MODE` | same as `VITE_DATA_MODE` | `live` sends only Ask Amplifi to the proxy |
+| `VITE_CHAT_MODE` | same as `VITE_DATA_MODE` | `live` sends Ask Amplifi to the proxy |
+| `VITE_DATA_MODE` | `mock` | `mock` uses sample data; `live` calls the platform API for every page (not built yet) |
 | `VITE_AMPLIFI_PROXY_URL` | `/amplifi` | Where the browser sends chat requests |
-| `VITE_PLATFORM_API_BASE` | `/api` | Platform REST API base, used in `live` data mode |
-| `VITE_REQUEST_TIMEOUT_MS` | `30000` | Timeout per request; use `120000` with live chat |
-| `VITE_MAX_UPLOAD_MB` | `50` | Largest PDF the upload screen accepts |
+| `VITE_REQUEST_TIMEOUT_MS` | `30000` | Request timeout; use `120000` with live chat |
 | `VITE_ROUTER_MODE` | `browser` | `browser`, `hash` (static hosting) or `memory` (embedded demos) |
+| `AMPLIFI_PROXY_TARGET` | not set | Dev server only: where `/amplifi` is forwarded, normally `http://localhost:8787` |
 
-Development-server settings, read only by `vite.config.ts` and never sent to the browser:
+`.env.example` also has `VITE_PLATFORM_API_BASE` and `VITE_MAX_UPLOAD_MB`, which matter only for fully live mode and uploads.
 
-| Variable | Purpose |
-| --- | --- |
-| `AMPLIFI_PROXY_TARGET` | Where the dev server forwards `/amplifi`, normally `http://localhost:8787` |
-| `DEV_API_TARGET` | Where the dev server forwards `/api` (and `/amplifi` if `AMPLIFI_PROXY_TARGET` is not set) |
-
-### Proxy (`.env.amplifi`)
+**The proxy (`.env.amplifi`).**
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `AMPLIFI_BASE_URL` | Yes | Amplifi API base including `/api/v3` |
-| `AMPLIFI_EMAIL` | Yes | Amplifi login email |
-| `AMPLIFI_PASSWORD` | Yes | Amplifi login password |
+| `AMPLIFI_BASE_URL` | Yes | Amplifi API base, including `/api/v3` |
+| `AMPLIFI_EMAIL`, `AMPLIFI_PASSWORD` | Yes | The Amplifi login |
 | `AMPLIFI_CHAT_APP_ID` | Yes | The chat app to ask |
 | `PORT` | No | Proxy port, default `8787` |
 | `AMPLIFI_TIMEOUT_MS` | No | Timeout for each Amplifi call, default `120000` |
 
-## Data modes
+## Commands
 
-| Mode | Settings | Behaviour |
-| --- | --- | --- |
-| **Demo** | defaults | Everything uses the sample data in `src/data/`. Ask Amplifi answers only the suggested questions, and every answer is labelled *Demo answer, not generated by Amplifi*. |
-| **Live chat** | `VITE_CHAT_MODE=live` | Ask Amplifi uses the proxy and real Amplifi answers; the other pages keep the sample data. This is the current setup. |
-| **Fully live** | `VITE_DATA_MODE=live` | Every page calls the platform REST API described in [docs/INTEGRATION.md](docs/INTEGRATION.md). That API does not exist yet. |
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Development server with hot reload at <http://localhost:5173> |
+| `npm run amplifi:proxy` | Starts the Amplifi proxy at <http://localhost:8787> |
+| `npm test` | Runs all tests once (`npm run test:watch` keeps them running) |
+| `npm run lint` | ESLint, including the React hooks rules |
+| `npm run typecheck` | TypeScript only |
+| `npm run build` | Type check, then a production build into `dist/` |
+| `npm run build:standalone` | One self-contained HTML file in `dist-standalone/`, for sharing a demo |
 
-## Project structure
+## Do and don't
 
-```
-server/
-  amplifi-proxy.mjs   Server-side proxy between the browser and Amplifi (no dependencies)
-src/
-  types/              Typed models: research records, papers, review items, chat, uploads
-  data/               Sample data and static configuration, used only by the demo adapters
-  domain/             Pure logic with no React: filters, chart maths, review rules, citations, Markdown
-  services/           Backend layer: HTTP client, response validation, demo and live adapters
-  state/              React context providers: data, view state, chat, uploads, dialogs, toasts
-  hooks/              Small reusable hooks: theme, media queries, stored state, page title
-  components/         Presentational components, grouped by area
-    common/ layout/ navigation/ charts/ tables/ chat/ upload/ review/ detail/
-  pages/              One folder per route, composing components with state
-  styles/             Design tokens (variables.css) and global base styles
-  test/               Test setup and whole-app flow tests
-docs/                 Integration notes and Amplifi API findings
-scripts/              Standalone HTML build
-```
+**Do**
 
-## Architecture
+- Keep the Amplifi login only in `.env.amplifi`.
+- Restart the proxy after changing `.env.amplifi` or `server/amplifi-proxy.mjs`, and restart `npm run dev` after changing `.env`. Both read their settings only when they start.
+- Click **New chat** before each test question. Amplifi remembers the whole chat, so earlier answers can affect later ones.
+- Ask about one or two papers at a time, and pick papers CP01 to CP10 only. Those are the papers loaded in Amplifi.
+- Keep the agent's prompt search-first, with no answers written into the prompt.
+- Check important numbers against the paper. The citation buttons open it.
 
-**Data flow.** A page reads from a provider such as `useResearchData` or `useChat`. The provider calls a service, and the service calls an adapter chosen once in `src/services/index.ts` from the configuration. Tests inject their own adapters through `ServicesProvider`, which is how failures and slow responses are tested without a network.
+**Don't**
 
-**State.** React state and context only; no state library was needed. Server data lives in `ResearchDataProvider`, which uses a reducer. Filters and selections live in `ViewStateProvider`, so they survive moving between pages. The chat thread is kept in `sessionStorage` for the current tab.
-
-**Chat answers.** Rendered with `react-markdown` and `remark-gfm`, the same libraries Amplifi's own interface uses. `src/domain/markdown.ts` turns Amplifi's bullet characters into proper lists and citation markers into links, which `CitedText` renders as buttons.
-
-**Charts.** Hand-written SVG components rather than a charting library. They draw Pareto ("best balance") outlines, collision-free point labels and log axes, and their points can be focused with the keyboard to open the record. The maths is in `src/domain/charts.ts` and is unit tested. Records missing a value are left out and counted in the caption, never estimated.
-
-**Styling.** CSS Modules on top of a design token file. Light and dark themes follow the system until the person picks one.
-
-**Dependencies.** At runtime: React, React DOM, React Router, Lucide icons, `react-markdown` and `remark-gfm`. Everything else is development tooling. The proxy uses only Node's built-in modules.
-
-## Testing
-
-`npm test` runs 74 tests.
-
-- **Domain.** Pair filtering and summaries, compare picks, the untested grid, chart maths (ticks, log axes, Pareto front, correlation, missing values, label placement), review state changes, PDF validation, citations, formulae, and the Markdown conversion of Amplifi answers.
-- **Services.** HTTP error mapping (401, 403, 404, 413, 5xx, network, timeout, cancellation, invalid JSON), response validation, the proxy contract (including a check that no credentials are sent from the browser), and demo streaming and stop.
-- **Whole-app flows.**
-  - Dashboard links and quick questions.
-  - Find with Amplifi on a missing value.
-  - A failed load with retry.
-  - Library search and filters that persist.
-  - Review: approve, correct with validation, failed save, and double-click protection.
-  - Upload: rejection, the full pipeline into the Library, failure and retry.
-  - Chat: demo labelling and citations, the error state, follow-up history and scope, formatted Amplifi answers, the live badge, and opening the chat from a paper.
-
-The proxy was also tested end to end against a local Amplifi: login, a cited answer, and a follow-up question in the same session.
-
-## Accessibility
-
-- Every page was audited with axe-core (WCAG 2 A and AA plus best practices) in light and dark themes, and again with a dialog open, a chat answer showing and an upload in progress.
-- **Keyboard.** A skip link, visible focus on every control, and arrow-key tabs (Home and End too). Chart points and bars can be focused and opened. Enter sends a chat message and Shift+Enter adds a line. Dialogs trap focus, close on Escape and return focus to where they were opened.
-- **Screen readers.** Tables are real tables with captions and restack visually on phones. Status messages, toasts and answers use live regions. Icon buttons have names, and the review badge is announced as "6 waiting".
-- **Contrast.** Muted text, the brand teal, the approve green, the checked-status green and the link teal were darkened slightly from the prototype to reach 4.5:1.
-- Reduced-motion preferences turn off animation.
-
-## Security
-
-- **Secrets stay on the server.** The Amplifi email and password live only in `.env.amplifi`, which is gitignored and read only by the proxy. The browser never sees them or the Amplifi token.
-- **Never put secrets in `VITE_` variables.** Every `VITE_` variable is compiled into the JavaScript bundle and is visible to anyone using the app.
-- **No raw HTML.** Chat answers are rendered as Markdown only; HTML inside an answer is not rendered.
-- **Quiet logs.** The proxy logs the method, path, status and duration of each request, never the token, the password or the question text.
+- Don't put secrets in `VITE_` variables; anyone using the app can read them.
+- Don't commit `.env` or `.env.amplifi`. Both are gitignored; keep it that way.
+- Don't call Amplifi from the browser or from components. Always go through `src/services/` and the proxy.
+- Don't run all of Amplifi's containers on a laptop; on a 14 GB laptop Docker froze. Use the lean set above.
+- Don't share one running proxy widely. Everyone who uses it asks through the same Amplifi account.
 
 ## Troubleshooting
 
-| Symptom | What to check |
+| What you see | What to do |
 | --- | --- |
-| Ping says the Amplifi login failed | The email, password and base URL in `.env.amplifi`. Restart the proxy afterwards; it reads the file at start. |
-| The chat shows an Amplifi error about the chat app | `AMPLIFI_CHAT_APP_ID`, and that the login can open that chat app in Amplifi's UI. |
-| *Took too long* (HTTP 504) | Amplifi's nginx stops at 60 seconds. Set `AMPLIFI_BASE_URL=http://localhost:8000/api/v3` to call the API directly. |
-| Answers are labelled as demo answers | `VITE_CHAT_MODE=live` is missing from `.env`. Restart `npm run dev` after editing it. |
-| *Amplifi had a problem (error 500)* or *Couldn't reach Amplifi* | The proxy is not running, or `AMPLIFI_PROXY_TARGET` does not match its port. |
+| Ping says *Amplifi login failed (HTTP 502)* | nginx has lost track of Amplifi's API. Run `docker restart nginx`. |
+| Ping says *Amplifi login failed (HTTP 400)* or *(HTTP 401)* | Fix the email or password in `.env.amplifi`, then restart the proxy. |
+| *Couldn't reach Amplifi* or *error 500* in the chat | The proxy isn't running, or `AMPLIFI_PROXY_TARGET` doesn't match its port. |
+| Answers are labelled as demo answers | Add `VITE_CHAT_MODE=live` to `.env` and restart `npm run dev`. |
+| *Took too long* (HTTP 504) | Amplifi's nginx gives up after 60 seconds. Ask a narrower question, or point `AMPLIFI_BASE_URL` at `http://localhost:8000/api/v3` to skip nginx. |
+| *Port 8787 (or 5173) is already in use* | An earlier proxy or website is still running in another terminal. Close it. |
+| `docker` says it can't connect | Docker Desktop isn't running yet. Start it and wait for *Engine running*. |
+
+## Testing
+
+`npm test` runs 74 tests across nine files:
+
+- **Domain logic:** filters, comparisons, chart maths, review rules, citations and the Markdown conversion of Amplifi answers.
+- **Services:** HTTP error handling, response validation, and the proxy contract, including a check that the browser never sends credentials.
+- **Whole-app flows:** the Library, Review, uploads and Ask Amplifi, including follow-ups, the paper filter and the live badge.
+
+**Answer quality.** On 28 October we asked Amplifi 15 questions through this app and scored each answer against the original papers. It scored 135 of 150 points (90%): 14 answers passed, 1 was partly right, and every number was in the paper it cited.
+
+![Score per question in the 28 October test: 14 of 15 passed the mark of 8 out of 10](docs/images/test-scores.png)
+
+## Project structure
+
+```text
+server/amplifi-proxy.mjs   Server-side proxy between the browser and Amplifi (Node built-ins only)
+src/
+  services/                Backend layer: HTTP client, validation, demo and live adapters
+  state/                   React context: data, view state, chat, uploads, dialogs, toasts
+  domain/                  Pure logic: filters, chart maths, review rules, citations, Markdown
+  components/              Presentational components, grouped by area (chat, charts, tables, ...)
+  pages/                   One folder per route
+  data/                    Sample data, used only in demo mode
+  types/  hooks/  styles/  test/
+docs/                      Integration notes, Amplifi findings and images
+scripts/                   Standalone HTML build
+```
+
+Built with React 18, TypeScript, Vite, React Router, CSS Modules and Vitest. Chat answers use `react-markdown` and `remark-gfm`; the charts are hand-written SVG. Every page was checked with axe-core for WCAG 2 A and AA in light and dark themes.
 
 ## Known limitations
 
-- **Chat only.** Only Ask Amplifi is live. The other pages use the sample data, and *Find with Amplifi* gives a demo result.
-- **No streaming.** The whole answer appears at once, typically after 10 to 20 seconds.
-- **One shared login.** Everyone using a running proxy asks through the same Amplifi account.
-- **Session-only data.** In demo mode, review decisions last only until the page is reloaded.
-- **Fonts.** Montserrat loads from Google Fonts. For locked-down networks, self-host it (for example with `@fontsource/montserrat`) and remove the link in `index.html`.
+- **Only Ask Amplifi is live.** The other pages use sample data, and *Find with Amplifi* gives a demo result.
+- **Only the 10 client papers are in Amplifi.** The paper list also shows the 27 Theme A papers, which aren't loaded yet.
+- **Questions across several papers can miss a paper.** The agent runs one search rather than one per paper.
+- **Some citations aren't clickable.** When the agent writes extra words inside the brackets, such as `[CP01, laboratory measurement]`, the citation shows as plain text. About half the citations in the test looked like this.
+- **Answers vary between runs.** This Amplifi version doesn't pass the agent's temperature setting to the model.
+- **No streaming.** The whole answer arrives at once, usually after 15 to 25 seconds.
 
-## Further documentation
+## More documentation
 
 | Document | Contents |
 | --- | --- |
-| [docs/amplifi-api-notes.md](docs/amplifi-api-notes.md) | Findings from reading Amplifi's code: endpoints, authentication, response shapes and limits |
-| [docs/AMPLIFI_GETTING_STARTED.md](docs/AMPLIFI_GETTING_STARTED.md) | Step-by-step plan for running the frontend on Amplifi |
-| [docs/AMPLIFI_WIRING_BRIEF.md](docs/AMPLIFI_WIRING_BRIEF.md) | The wider integration brief, including the structured tasks for the other pages |
+| [docs/how-amplifi-works.pdf](docs/how-amplifi-works.pdf) | A 10-page visual explainer of Amplifi: ingestion, agents, chat and API access |
+| [docs/amplifi-api-notes.md](docs/amplifi-api-notes.md) | Amplifi's endpoints, authentication, response shapes and limits, from its code |
+| [docs/AMPLIFI_GETTING_STARTED.md](docs/AMPLIFI_GETTING_STARTED.md) | Step-by-step plan for running this frontend on Amplifi |
+| [docs/AMPLIFI_WIRING_BRIEF.md](docs/AMPLIFI_WIRING_BRIEF.md) | The wider integration brief, including the other pages |
 | [docs/INTEGRATION.md](docs/INTEGRATION.md) | The platform REST API contract for fully live mode |
-| [docs/MIGRATION.md](docs/MIGRATION.md) | Where each feature of the original prototype now lives |
+| [docs/MIGRATION.md](docs/MIGRATION.md) | Where each feature of the original single-file prototype now lives |
 | [docs/React_Frontend_Handoff.md](docs/React_Frontend_Handoff.md) | Handoff notes for the React frontend |
