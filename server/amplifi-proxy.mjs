@@ -90,11 +90,14 @@ async function createSession() {
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Without this note the agent sometimes answers from memory instead of searching the papers.
+const SEARCH_NOTE = "\n\n(Search the client papers before answering. If the question is about several papers, search each of them separately.)";
 
 async function askAmplifi({ question, scope, conversationId }) {
   // The frontend's conversationId is the Amplifi chat session ID; a new conversation gets a new session.
   const sessionId = typeof conversationId === "string" && UUID_RE.test(conversationId) ? conversationId : await createSession();
-  const query = typeof scope === "string" && scope ? `Answer using only paper ${scope}.\n${question.trim()}` : question.trim();
+  const asked = typeof scope === "string" && scope ? `Answer using only paper ${scope}.\n${question.trim()}` : question.trim();
+  const query = asked + SEARCH_NOTE;
   const body = await amplifiJson("/chat", { chat_app_id: CHAT_APP_ID, chat_session_id: sessionId, query });
   // Agent failures arrive as HTTP 200 with an "error" key.
   if (body?.error) throw new ProxyError(502, `Amplifi agent error: ${body.error}`);
