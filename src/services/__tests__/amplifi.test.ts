@@ -35,6 +35,19 @@ describe("Amplifi proxy contract", () => {
     expect(a.origin).toBe("amplifi");
     expect(onText).toHaveBeenCalledWith("ok [CP01]");
   });
+
+  it("sends C1 to C9 with the zero Amplifi's file names use, and reads them back without it", async () => {
+    const bodies: unknown[] = [];
+    const fetchImpl = async (_url: RequestInfo | URL, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response(JSON.stringify({ answer: "Capacity fade [C01_Edge_2021.pdf]." }), { status: 200 });
+    };
+    const config = { ...readConfig({}), mode: "live" as const, amplifiProxyUrl: "/amplifi" };
+    const a = await createHttpAmplifiClient(config, fetchImpl).ask({ question: "Q?", scope: "C1", history: [], conversationId: null });
+    expect(bodies[0]).toMatchObject({ scope: "C01" });
+    expect(a.citations).toEqual([{ paperId: "C1", page: null }]);
+    expect(parseChatResponse({ answer: "x", citations: [{ paperId: "C01", page: "2" }] }).citations).toEqual([{ paperId: "C1", page: "2" }]);
+  });
 });
 
 describe("mock Amplifi", () => {

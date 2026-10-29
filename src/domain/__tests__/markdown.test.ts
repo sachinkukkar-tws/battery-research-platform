@@ -18,6 +18,10 @@ describe("answerToMarkdown", () => {
     );
   });
 
+  it("links Amplifi's zero-padded Theme A IDs to the library's C1 to C9", () => {
+    expect(answerToMarkdown("See [C01_Edge_2021.pdf] and [C09].")).toBe("See [C1](#cite-C1) and [C9](#cite-C9).");
+  });
+
   it("keeps a bullet character that is part of a sentence", () => {
     expect(answerToMarkdown("Na • K comparison")).toBe("Na • K comparison");
   });

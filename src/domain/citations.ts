@@ -3,6 +3,16 @@ const PAPER_ID = /^(?:CP\d{2}|C\d{1,2}|N\d|I\d)$/;
 // A file name Amplifi sometimes cites instead of the ID, e.g. CP01_Shen_2026.pdf.
 const FILE_SUFFIX = /_\S*\.pdf$/i;
 
+/** The library ID for a paper ID Amplifi cites. Amplifi's Theme A files pad C1 to C9 with a zero (C01_Edge_2021.pdf). */
+export function libraryPaperId(id: string): string {
+  return id.replace(/^C0(\d)$/, "C$1");
+}
+
+/** The ID Amplifi's file names use for a library paper, e.g. C01 for C1. */
+export function amplifiPaperId(id: string): string {
+  return id.replace(/^C(\d)$/, "C0$1");
+}
+
 /**
  * Inline citation markers: a bracket that starts with a paper ID, such as [CP07], [CP01, CP03],
  * [CP01, laboratory measurement] or [CP01_Shen_2026.pdf]. Group 1 is the first ID; group 2 is
@@ -12,11 +22,11 @@ export const CITATION_PATTERN = /\[(CP\d{2}|C\d{1,2}|N\d|I\d)(?:_[^\s\]]*\.pdf)?
 
 /** Splits one citation marker into the papers it cites and any note Amplifi wrote beside them. */
 export function citationParts(firstId: string, rest = ""): { ids: string[]; note: string } {
-  const ids = [firstId];
+  const ids = [libraryPaperId(firstId)];
   const notes: string[] = [];
   for (const raw of rest.split(/[,;]/)) {
     const part = raw.trim();
-    const id = part.replace(FILE_SUFFIX, "");
+    const id = libraryPaperId(part.replace(FILE_SUFFIX, ""));
     if (PAPER_ID.test(id)) {
       if (!ids.includes(id)) ids.push(id);
     } else if (part) {

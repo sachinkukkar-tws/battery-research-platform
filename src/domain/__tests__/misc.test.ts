@@ -1,4 +1,4 @@
-import { extractCitationIds, splitCitedText } from "../citations";
+import { amplifiPaperId, extractCitationIds, libraryPaperId, splitCitedText } from "../citations";
 import { formulaParts } from "../chemistry";
 import { validatePdf } from "../upload";
 import { filterLibrary, DEFAULT_LIBRARY_FILTERS } from "../library";
@@ -25,6 +25,12 @@ describe("citations", () => {
       { kind: "text", text: " (laboratory measurement)" },
       { kind: "text", text: "." },
     ]);
+  });
+
+  it("treats Amplifi's zero-padded C01 to C09 as the library's C1 to C9", () => {
+    expect(extractCitationIds("[C01] [C01_Edge_2021.pdf, p. 3] [C10, C02] [CP01]")).toEqual(["C1", "C10", "C2", "CP01"]);
+    expect(["C1", "C9", "C10", "CP01", "N1"].map(amplifiPaperId)).toEqual(["C01", "C09", "C10", "CP01", "N1"]);
+    expect(["C01", "C10", "CP01"].map(libraryPaperId)).toEqual(["C1", "C10", "CP01"]);
   });
 });
 

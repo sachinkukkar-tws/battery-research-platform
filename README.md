@@ -69,7 +69,7 @@ VITE_REQUEST_TIMEOUT_MS=120000
 VITE_AMPLIFI_PAPERS=CP01,CP02,CP03,CP04,CP05,CP06,CP07,CP08,CP09,CP10
 ```
 
-`VITE_AMPLIFI_PAPERS` lists the papers loaded in Amplifi, so the chat offers only those. Add the IDs of any papers you load later.
+`VITE_AMPLIFI_PAPERS` lists the papers loaded in Amplifi, so the chat offers only those. Add the IDs of any papers you load later. Use the Library's IDs (C1, not C01): Amplifi's Theme A file names pad C1 to C9 with a zero, and the app converts between the two.
 
 **3. Configure the proxy.** Copy `.env.amplifi.example` to `.env.amplifi` and fill it in. This file is gitignored and only the proxy reads it, so the login never reaches the browser.
 

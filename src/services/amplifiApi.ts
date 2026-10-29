@@ -1,6 +1,6 @@
 import type { AmplifiAnswer, AskRequest, Citation, FindValueRequest, FoundValue } from "@/types";
 import { MOCK_ANSWERS, MOCK_FALLBACK_ANSWER } from "@/data/mockAnswers";
-import { extractCitationIds } from "@/domain/citations";
+import { amplifiPaperId, extractCitationIds, libraryPaperId } from "@/domain/citations";
 import type { AppConfig } from "./config";
 import { ApiError, requestJson } from "./http";
 import { sleep } from "./sleep";
@@ -22,6 +22,7 @@ export interface AmplifiClient {
 /* ---------------- Proxy contract (owned by this frontend) ----------------
  * POST {proxy}/chat
  *   request:  { question: string, scope: string | null, history: {role, text}[], conversationId: string | null }
+ *             (scope is the paper ID as Amplifi's file names write it: C01 for the library's C1)
  *   response: { answer: string, citations?: { paperId: string, page: string | null }[], conversationId?: string | null }
  * POST {proxy}/find-value
  *   request:  { paperId: string, sample: string, field: string }
@@ -35,7 +36,7 @@ function parseCitations(raw: unknown): Citation[] | null {
   const out: Citation[] = [];
   for (const c of raw) {
     if (!isObj(c) || typeof c.paperId !== "string") continue;
-    out.push({ paperId: c.paperId, page: typeof c.page === "string" ? c.page : null });
+    out.push({ paperId: libraryPaperId(c.paperId), page: typeof c.page === "string" ? c.page : null });
   }
   return out;
 }
@@ -71,7 +72,7 @@ export function createHttpAmplifiClient(config: AppConfig, fetchImpl?: typeof fe
     async ask({ question, scope, history, conversationId, signal, onText }) {
       const answer = await requestJson(`${base}/chat`, {
         method: "POST",
-        body: { question, scope, history, conversationId },
+        body: { question, scope: scope && amplifiPaperId(scope), history, conversationId },
         signal,
         timeoutMs: config.timeoutMs,
         service: SERVICE,
