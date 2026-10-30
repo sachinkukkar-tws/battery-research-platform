@@ -14,7 +14,7 @@ A React frontend for the Battery Science proof of concept on Amplifi. It shows *
 | --- | --- |
 | **Explorer** | Pick an anode and a cathode it has been paired with. See the pair's best results at a glance, then its performance (half-cell and full-cell results apart), how each anode was made, its materials and the papers behind it, one tab at a time |
 | **Papers** | Open any paper Amplifi has read to see everything it found, one tab at a time: performance, synthesis, full cells and materials, with the paper's DOI and PDF. Papers without a full cell, such as CP04, and the CP08 review are here too |
-| **Ask Amplifi** | Ask about the papers in plain language and get answers with clickable citations, with follow-up questions in the same chat |
+| **Ask Amplifi** | Ask about the papers in plain language and get answers with clickable citations, with follow-up questions in the same chat. Previous chats stay in a list and can be opened again |
 
 - **Every value opens its source:** the sentence it was copied from, with the value highlighted, and a button that opens the PDF at that page.
 - **The search in the header** finds a material, a sample, a paper or a DOI. Press `/` to jump to it.
@@ -148,7 +148,7 @@ flowchart LR
 ```
 
 - **The browser never talks to Amplifi.** The Vite dev server forwards `/amplifi` to the proxy, and only the proxy holds the Amplifi login and token.
-- **One Amplifi chat per conversation.** The proxy creates an Amplifi chat session for the first question of each chat, so follow-up questions work. **New chat** starts a new one.
+- **One Amplifi chat per conversation.** The proxy creates an Amplifi chat session for the first question of each chat, so follow-up questions work. **New chat** starts a new one; the earlier chats stay under **Previous chats** (kept in this browser, up to 50), and a reopened chat continues its own Amplifi conversation.
 - **Every question asks Amplifi to search first.** The proxy adds a short note to each question, and adds *"Answer using only paper CPxx"* when a paper is picked in the list.
 - **Structured answers.** `POST /amplifi/structured` takes `{ question, schema }`, where `schema` is a JSON Schema, and returns `{ data }` in that shape. The proxy sends it to Amplifi's `/chat/upload` with `output_schema`. The extraction scripts use it.
 - **Answers are rendered safely.** Markdown is shown as headings, lists and tables; raw HTML is never rendered; citation markers become buttons that open the paper, including ones with a note such as `[CP01, laboratory measurement]`.
@@ -250,7 +250,7 @@ The browser's side of these contracts is in `src/services/amplifiApi.ts` (the ch
 
 ## Testing
 
-`npm test` runs 87 tests across 11 files:
+`npm test` runs 92 tests across 12 files:
 
 - **Domain logic:** the Explorer's grouping, ranking, evidence checks, headline results and highlighting; the header search; citations and the Markdown conversion of Amplifi answers.
 - **Amplifi's recorded answers:** `src/test/fixtures/explorerData.ts`, a copy of the proxy's data used only by the tests. Every checked value has a known paper and a PDF page, and each cathode lists the papers the PDFs show.
