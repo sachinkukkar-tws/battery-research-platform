@@ -1,5 +1,5 @@
 /**
- * The Explorer's data: what Amplifi extracted from each client paper, with every value checked against the PDF.
+ * The Explorer's data: what Amplifi extracted from each paper, with every value checked against the PDF.
  * Built by scripts/explorer/build_data.py and served live by the proxy at GET /amplifi/explorer.
  */
 

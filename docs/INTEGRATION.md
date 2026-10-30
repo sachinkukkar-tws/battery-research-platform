@@ -55,7 +55,7 @@ Returns every paper in the Library.
 
 ```json
 [{ "id": "CP02", "authors": "Wang et al.", "year": 2026, "title": "…", "type": "Lab study",
-   "collection": "Hard carbon (client)", "status": "Extracted", "values": "2 waiting", "note": "…" }]
+   "collection": "Hard carbon", "status": "Extracted", "values": "2 waiting", "note": "…" }]
 ```
 
 `status` is `"Harvested"`, `"Extracted"` or `"Checked"`.

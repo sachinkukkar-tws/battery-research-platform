@@ -1,4 +1,4 @@
-// A recorded copy of the data the proxy serves: Amplifi's answers for the client papers on 29 Oct 2026, checked against the PDFs.
+// A recorded copy of the data the proxy serves: Amplifi's answers for the papers on 29 Oct 2026, checked against the PDFs.
 // Only the tests use it. The app loads its data live from the proxy (GET /amplifi/explorer).
 import type { ExplorerData } from "@/types";
 

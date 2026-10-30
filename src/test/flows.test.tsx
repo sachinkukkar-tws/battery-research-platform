@@ -32,7 +32,7 @@ describe("Papers", () => {
   it("opens the first paper and switches to another", async () => {
     const { user } = renderApp("/papers");
     expect(await screen.findByRole("heading", { name: /^Pore-stitching engineering/ })).toBeInTheDocument();
-    await user.click(within(screen.getByRole("navigation", { name: "Client papers" })).getByRole("link", { name: /^CP04/ }));
+    await user.click(within(screen.getByRole("navigation", { name: "Paper list" })).getByRole("link", { name: /^CP04/ }));
     expect(screen.getByRole("heading", { name: /^A stage-wise plateau-sodiation mechanism/ })).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: /^Full cells/ }));
     expect(screen.getByText("Amplifi found no full cells in this paper, only half-cell (anode) tests.")).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("Ask Amplifi", () => {
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByRole("heading", { name: /Tuning hard carbon pores/ })).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Open the paper" }));
-    expect(await screen.findByRole("navigation", { name: "Client papers" })).toBeInTheDocument();
+    expect(await screen.findByRole("navigation", { name: "Paper list" })).toBeInTheDocument();
   });
 
   it("shows an error when Amplifi fails and doesn't invent an answer", async () => {
@@ -125,7 +125,7 @@ describe("Ask Amplifi", () => {
     const list = await screen.findByLabelText("Which papers to search");
     expect(within(list).getAllByRole("option").map((o) => (o as HTMLOptionElement).value)).toEqual(["", "CP01", "CP02"]);
     await user.click(screen.getByRole("link", { name: "Papers" }));
-    await user.click(within(await screen.findByRole("navigation", { name: "Client papers" })).getByRole("link", { name: /^CP05/ }));
+    await user.click(within(await screen.findByRole("navigation", { name: "Paper list" })).getByRole("link", { name: /^CP05/ }));
     expect(screen.queryByRole("button", { name: /Ask Amplifi about/ })).toBeNull();
   });
 

@@ -147,7 +147,7 @@ describe("Explorer data model", () => {
   });
 });
 
-describe("Amplifi's recorded answers for the client papers", () => {
+describe("Amplifi's recorded answers for the papers", () => {
   const items = [...EXPLORER_FIXTURE.anodes, ...EXPLORER_FIXTURE.fullCells, ...EXPLORER_FIXTURE.materials, ...EXPLORER_FIXTURE.performance];
 
   it("gives every checked value a known paper and a PDF page", () => {
@@ -158,7 +158,7 @@ describe("Amplifi's recorded answers for the client papers", () => {
     }
   });
 
-  it("offers the two anode types the client papers make, without CP02's control", () => {
+  it("offers the two anode types the papers make, without CP02's control", () => {
     expect(anodeTypes(EXPLORER_FIXTURE).map((t) => t.key)).toEqual(["sodium-ion|hard carbon", "lithium-ion|graphite/hard carbon"]);
   });
 

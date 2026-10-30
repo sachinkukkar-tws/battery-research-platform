@@ -99,7 +99,7 @@ describe("POST /amplifi/structured", () => {
     const sent = uploads.at(-1);
     expect(sent.auth).toBe("Bearer test-token");
     // multipart/form-data turns line breaks into CRLF.
-    expect(sent.fields.query).toMatch(/^List the anodes\.\r?\n\r?\n\(Search the client papers/);
+    expect(sent.fields.query).toMatch(/^List the anodes\.\r?\n\r?\n\(Search the papers/);
     expect(sent.fields.agent_id).toBe(AGENT_ID);
     expect(sent.fields.workspace_id).toBe(WORKSPACE_ID);
     expect(JSON.parse(sent.fields.output_schema)).toEqual(SCHEMA);

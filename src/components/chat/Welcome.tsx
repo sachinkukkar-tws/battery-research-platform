@@ -6,7 +6,7 @@ export function Welcome({ onAsk, questions }: { onAsk: (q: string) => void; ques
     <div className={styles.welcome}>
       <Mark size="lg" />
       <h2>What would you like to know?</h2>
-      <p className="muted">Ask about the client papers. Amplifi answers from them, with citations you can open.</p>
+      <p className="muted">Ask about the papers. Amplifi answers from them, with citations you can open.</p>
       {questions.length > 0 && (
         <ul className={styles.suggestions} aria-label="Suggested questions">
           {questions.map((q) => (

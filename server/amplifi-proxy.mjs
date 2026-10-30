@@ -115,7 +115,7 @@ async function createSession() {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // Without this note the agent sometimes answers from memory instead of searching the papers.
-const SEARCH_NOTE = "\n\n(Search the client papers before answering. If the question is about several papers, search each of them separately.)";
+const SEARCH_NOTE = "\n\n(Search the papers before answering. If the question is about several papers, search each of them separately.)";
 
 async function askAmplifi({ question, scope, conversationId }) {
   // The frontend's conversationId is the Amplifi chat session ID; a new conversation gets a new session.

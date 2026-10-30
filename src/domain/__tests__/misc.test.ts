@@ -14,7 +14,7 @@ describe("citations", () => {
   });
 
   it("reads citations that have extra words, several IDs or a file name inside the brackets", () => {
-    const text = "A [CP01, laboratory measurement], [CP02; lab study], [CP03, CP04], [CP05_Huang_2026.pdf] and [lab study; client paper].";
+    const text = "A [CP01, laboratory measurement], [CP02; lab study], [CP03, CP04], [CP05_Huang_2026.pdf] and [lab study; research paper].";
     expect(extractCitationIds(text)).toEqual(["CP01", "CP02", "CP03", "CP04", "CP05"]);
     expect(splitCitedText("94.8% [CP01, laboratory measurement].")).toEqual([
       { kind: "text", text: "94.8% " },

@@ -21,17 +21,17 @@ You're helping wire the Battery Research Platform frontend (React, TypeScript, V
 | `reference/battery_platform_demo.html` | A working single-file demo and the visual and behavioural reference. Its `DataService` shows where live mode plugs in. |
 | `reference/records.json` | Sample data in the frontend's internal record format |
 | `reference/amplifi_agent_prompt_v4.7.txt` | The current chat agent prompt: theme rules, paper IDs, the file-name mapping and the Theme B search workflow |
-| `reference/checked_values.json`, `.csv` | 72 values checked by hand against 8 client papers, with pages. This is the answer key for accuracy tests. |
+| `reference/checked_values.json`, `.csv` | 72 values checked by hand against 8 of the papers, with pages. This is the answer key for accuracy tests. |
 | `reference/Amplifi_Integration_Design_Draft.docx` | The integration design draft written for Jay. Its content is summarised in this brief. |
 
 ## 1. The project in brief
 
-- **Client and goal:** a government-sector client in India working on battery science. The POC shows how researchers can search battery papers, compare materials and see the evidence behind each value. It is the first phase of a broader research assistant meant to cover far larger collections of papers, eventually turning papers into structured battery data.
+- **Users and goal:** a government-sector organisation in India working on battery science. The POC shows how researchers can search battery papers, compare materials and see the evidence behind each value. It is the first phase of a broader research assistant meant to cover far larger collections of papers, eventually turning papers into structured battery data.
 - **Platform:** Amplifi ingests documents into datasets and answers questions through configurable agents. Each agent is a prompt, a model, and search tools over the datasets.
 - **Model settings:** GPT-5.2 at low reasoning effort, with temperature 0–0.2. GPT-5.4 gave no meaningful accuracy gain and costs about 25–30% more.
 - **Datasets:**
   - **Theme A, lithium-ion (LFP and NMC):** 27 documents (C1–C22, N1–N2, I1–I3) plus the corpus catalogue, CAT. Amplifi can't search CAT's contents, so the prompt carries a topic index instead.
-  - **Theme B, the client's hard carbon papers (mainly sodium-ion):** CP01–CP10, in a separate dataset named "Theme B-Client-Papers". CP02 is lithium-ion (a graphite anode with a hard carbon network). CP08 is a review with no new measurements.
+  - **Theme B, the hard carbon papers (mainly sodium-ion):** CP01–CP10, in a separate dataset of their own. CP02 is lithium-ion (a graphite anode with a hard carbon network). CP08 is a review with no new measurements.
 - **Agents and tools:**
   - The chat agent runs the two-theme prompt. v4.6 is live; v4.7 adds the Theme B search workflow and has been tried on a Claude Sonnet test agent.
   - Theme B has three tools, used in this order: `Tool-01-File-Sys-Nav-Theme-B` (File Navigator), `Tool-02-Vec-Search-Theme-B` (Vector Search) and `Tool-03-Hybrid-Search-Theme-B` (Hybrid Search).
@@ -41,7 +41,7 @@ You're helping wire the Battery Research Platform frontend (React, TypeScript, V
 
 | Area | What was done | Result |
 |---|---|---|
-| Corpus | Curated and ingested the Theme A corpus, then the 10 client papers as Theme B, with DOIs verified | 37 documents in two datasets |
+| Corpus | Curated and ingested the Theme A corpus, then the 10 hard carbon papers as Theme B, with DOIs verified | 37 documents in two datasets |
 | Agent prompt | Iterated the prompt from v3 to v4.7 | Theme A, Round 2: 20 of 20 test questions and 3 of 3 researcher questions passed |
 | Structured-data pilot | Built an answer key of 8 papers × 9 fields = 72 values, each with its page, checked by hand | 63 of 70 scored values matched (90%), but the score was inflated (section 8) |
 | Model comparison | Ran 20 new questions (10 on starting material, 10 on other fields) on GPT-5.2 and GPT-5.4 | 15 of 20 and 14 of 20; stayed on GPT-5.2 |
@@ -232,7 +232,7 @@ Rules
 6. Search before answering: File Navigator to find the files, Vector Search for
    relevant passages, then Hybrid Search for exact values. For a task that covers
    several papers, search each paper separately.
-7. Keep the collections apart. Theme A is lithium-ion. Theme B is the client's hard
+7. Keep the collections apart. Theme A is lithium-ion. Theme B is the hard
    carbon papers, mainly sodium-ion. CP02 is a lithium-ion paper.
 8. Use paper IDs, not file names. [Insert the THEME B FILE NAMES list from the
    v4.7 prompt.]
@@ -299,7 +299,7 @@ Explore the Amplifi repository and write `docs/amplifi-api-notes.md`. For each a
   - typed errors with plain-language messages
 - The Vite proxy configuration, plus a small Node proxy that adds the key from an environment variable.
 - `npm run amplifi:ping`: sends one question to the chat agent and prints the answer, the sources and the time taken.
-- **Done when:** the ping works, and no key appears in the client bundle (check the build output).
+- **Done when:** the ping works, and no key appears in the browser bundle (check the build output).
 
 ### Phase 2: task layer
 
@@ -390,7 +390,7 @@ Explore the Amplifi repository and write `docs/amplifi-api-notes.md`. For each a
 
 - No secrets in client code, fixtures, logs or commits.
 - Don't modify the Amplifi repository. Work on a branch in our project.
-- The client papers are under a text-and-data-mining rights review. The POC can read and present them, but don't build bulk extraction or export features beyond the POC without approval.
+- The papers are under a text-and-data-mining rights review. The POC can read and present them, but don't build bulk extraction or export features beyond the POC without approval.
 - Never invent values; show "Not reported".
 - Keep demo mode working.
 - Log each Amplifi call (task, duration, status and response size), but never the key.
@@ -405,7 +405,7 @@ Explore the Amplifi repository and write `docs/amplifi-api-notes.md`. For each a
 2. What should "paper quality" cover? The plan proposes an evidence checklist rather than a score.
 3. Should Review and Upload stay in the POC demo?
 4. Should the UI agent's prompt include the checked values for the 8 checked papers (a more accurate demo), or rely on search only (an honest view of live accuracy)?
-5. Is the review an internal demo or client-facing? That decides how the API key is handled.
+5. Is the review an internal demo, or shown outside the team? That decides how the API key is handled.
 
 ## 12. First prompt for Claude Code
 

@@ -32,7 +32,7 @@ function Papers({ data }: { data: ExplorerData }) {
 
   return (
     <div className={styles.layout}>
-      <nav className={styles.list} aria-label="Client papers">
+      <nav className={styles.list} aria-label="Paper list">
         <ul>
           {papers.map((p) => (
             <li key={p.id}>

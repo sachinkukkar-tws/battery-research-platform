@@ -1,6 +1,6 @@
 # Battery Science Explorer
 
-A React frontend for the Battery Science proof of concept on Amplifi. It shows **what the client papers report for each anode and cathode pair, with every value linked to the sentence and PDF page it came from**, and lets researchers **ask Amplifi about the papers and get cited answers**. Everything it shows comes live from Amplifi; no data is built into the app.
+A React frontend for the Battery Science proof of concept on Amplifi. It shows **what the papers report for each anode and cathode pair, with every value linked to the sentence and PDF page it came from**, and lets researchers **ask Amplifi about the papers and get cited answers**. Everything it shows comes live from Amplifi; no data is built into the app.
 
 ![The Explorer showing hard carbon with NFPP: the best results at a glance, materials, how each anode was made, and the performance table](docs/images/explorer.png)
 
@@ -35,7 +35,7 @@ Open <http://localhost:5173>. Everything the app shows comes from Amplifi throug
 
 ## Running with Amplifi
 
-You need Amplifi running with the client papers ingested, a chat app whose agent searches them, and an Amplifi login that can use that chat app.
+You need Amplifi running with the papers ingested, a chat app whose agent searches them, and an Amplifi login that can use that chat app.
 
 **1. Start Amplifi.** Its API must answer at <http://localhost:8085/health>.
 
@@ -142,7 +142,7 @@ flowchart LR
         P -->|"PDFs"| F[("AMPLIFI_PAPERS_DIR")]
         P -->|"refresh: extract.py, build_data.py"| C[("server/cache<br/>explorer.json")]
         A --> G["Agent-01<br/>search-first prompt"]
-        G -->|"hybrid and vector search"| K[("Client papers")]
+        G -->|"hybrid and vector search"| K[("Research papers")]
     end
     G -.->|"GPT-4.1 and<br/>text-embedding-3-large"| Z["Azure OpenAI"]
 ```

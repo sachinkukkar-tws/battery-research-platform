@@ -16,14 +16,14 @@ Match the reference demo's visual design, wording and behaviour unless this docu
 
 ## 1. Project context
 
-- **What it is:** an AI research assistant over battery papers, built on the organisation's Amplifi AI platform (a retrieval-augmented chat agent, currently GPT-5.2 at low reasoning). The client is in the government sector in India.
+- **What it is:** an AI research assistant over battery papers, built on the organisation's Amplifi AI platform (a retrieval-augmented chat agent, currently GPT-5.2 at low reasoning). The users are in the government sector in India.
 - **Two collections, each an Amplifi dataset:**
   - Theme A, lithium-ion: 27 documents (C1–C22 papers and reports, N1–N2 lab studies, I1–I3 Indian policy documents).
-  - Theme B, the client's hard carbon papers, mainly sodium-ion: CP01–CP10. CP02 is lithium-ion; CP08 is a review with no new measurements.
+  - Theme B, the hard carbon papers, mainly sodium-ion: CP01–CP10. CP02 is lithium-ion; CP08 is a review with no new measurements.
   - The Library shows all 37 documents.
 - **Why the platform is more than a chatbot:** Amplifi answers each question from a handful of retrieved passages. That works for questions about one paper, but list, compare and count questions across many papers miss papers, and it can't scale to lakhs of papers. So key values are extracted per paper into a structured table (records). The Workspace and Charts answer list and compare questions from that table; Ask Amplifi handles questions about what a paper says.
 - **Why there is a Review step:** in testing, Amplifi got detailed values right only about half the time when it had to find them itself. Every extracted value therefore waits for a person to approve, correct or reject it, and only checked values count as verified.
-- **Users:** battery researchers at the client.
+- **Users:** battery researchers and officials.
 
 ## 2. Scope
 
@@ -200,7 +200,7 @@ Card shadow: `0 6px 10px -4px rgba(0,0,0,.15)` in light mode and `0 6px 14px -6p
 
 ### 7.2 Library
 
-- **Filters:** search (title, author or ID), Collection (all, "Hard carbon (client)", "Lithium-ion"), and Status. Summary: "X of Y papers shown. A checked, B extracted, C harvested."
+- **Filters:** search (title, author or ID), Collection (all, "Hard carbon", "Lithium-ion"), and Status. Summary: "X of Y papers shown. A checked, B extracted, C harvested."
 - **Columns:** ID, Paper, Collection, Status badge, Values ("9 checked", "2 waiting" or "None yet").
   - The Paper cell shows the title on one line with an ellipsis, and below it "ID. Authors, year. Type".
   - The full title appears in a tooltip on hover or focus, but only when the title is actually cut off.
@@ -334,7 +334,7 @@ interface Record {
 
 interface LibraryItem {
   id: string; authors: string; year: number | null; title: string; type: string;
-  collection: "Hard carbon (client)" | "Lithium-ion"; status: Status;
+  collection: "Hard carbon" | "Lithium-ion"; status: Status;
   values: string | null;    // "9 checked", "2 waiting" or null
   note: string; demo?: boolean;
 }
@@ -418,7 +418,7 @@ The Amplifi chat goes through the backend as a proxy. Keep `callAmplifi()` (the 
 - How many documents an Amplifi dataset can hold, and whether search can be filtered by paper, year or chemistry.
 - The backend isn't built yet: the records database, the harvester, review storage and uploading to Amplifi.
 - Who may approve reviews: roles and authentication are still to be decided.
-- The client papers are under a text-and-data-mining rights review, so bulk extraction beyond the POC waits for that.
+- The papers are under a text-and-data-mining rights review, so bulk extraction beyond the POC waits for that.
 - Stakeholder feedback on the demo is pending and may change the screens.
 
 ## 13. Build order and checks

@@ -1,4 +1,4 @@
-/** The client works in India; the prototype formats numbers with Indian digit grouping. */
+/** Numbers use Indian digit grouping, for readers in India. */
 export const NUMBER_LOCALE = "en-IN";
 
 export const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
