@@ -1,61 +1,79 @@
-import { useCallback, useEffect, useId, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-import { titleForPath } from "@/components/navigation/navItems";
+import { useEffect } from "react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
+import { IconButton } from "@/components/common/Button";
+import { Mark } from "@/components/common/Badges";
 import { DetailDialogs } from "@/components/detail/DetailDialogs";
-import { useStoredState } from "@/hooks/useStoredState";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { Sidebar } from "./Sidebar";
-import { TopBar } from "./TopBar";
+import { useTheme } from "@/hooks/useTheme";
+import { useExplorerData, type ExplorerState } from "@/state/ExplorerDataContext";
+import { GlobalSearch } from "./GlobalSearch";
+import { NAV_ITEMS, titleForPath } from "./navItems";
 import styles from "./Layout.module.css";
+
+const DATA_BADGE: Record<ExplorerState["status"], string> = {
+  loading: "Loading",
+  ready: "Amplifi data",
+  missing: "No data yet",
+  error: "Data unavailable",
+};
 
 export function AppShell() {
   const { pathname } = useLocation();
-  const title = titleForPath(pathname);
-  const chatMode = pathname.startsWith("/ask");
-  const navId = useId();
-  const [navOpen, setNavOpen] = useState(false);
-  const [side, setSide] = useStoredState("brp-side", "expanded", ["expanded", "collapsed"] as const);
-  const collapsed = side === "collapsed";
-  usePageTitle(title);
-
-  const closeNav = useCallback(() => setNavOpen(false), []);
-
-  // Escape closes the mobile menu.
-  useEffect(() => {
-    if (!navOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setNavOpen(false);
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [navOpen]);
+  const { state } = useExplorerData();
+  const { theme, toggle } = useTheme();
+  const chatPage = pathname.startsWith("/ask");
+  usePageTitle(titleForPath(pathname));
 
   // Each page starts at the top, like a fresh page load.
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [pathname]);
 
-  const shellClass = [styles.wrapper, collapsed ? "side-collapsed" : "", navOpen ? styles.navOpen : "", chatMode ? styles.chatMode : ""]
-    .filter(Boolean)
-    .join(" ");
+  // The chat always asks Amplifi; the other pages show Amplifi's checked answers once they have loaded.
+  const live = chatPage || state.status === "ready";
+  const badge = chatPage ? "Live Amplifi" : DATA_BADGE[state.status];
 
   return (
-    <div className={shellClass}>
+    <div className={`${styles.shell} ${chatPage ? styles.chat : ""}`}>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <Sidebar id={navId} collapsed={collapsed} onToggleCollapsed={() => setSide(collapsed ? "expanded" : "collapsed")} onNavigate={closeNav} />
-      <div className={styles.scrim} onClick={closeNav} aria-hidden="true" />
-      <div className={styles.main}>
-        <TopBar title={title} navOpen={navOpen} navId={navId} chatPage={chatMode} onOpenNav={() => setNavOpen(true)} />
-        <main className={styles.content} id="main" tabIndex={-1}>
-          <Outlet />
-        </main>
-        {!chatMode && (
-          <footer className={styles.footer}>
-            <span>Battery Research Platform, proof of concept</span>
-            <span>Data: the client’s hard carbon papers and the lithium-ion knowledge base</span>
-          </footer>
-        )}
-      </div>
+      <header className={styles.header}>
+        <div className={styles.headerInner}>
+          <NavLink to="/explore" className={styles.brand} aria-label="Battery Science Explorer, home">
+            <Mark size="sm" />
+            <span className={styles.brandText}>
+              Battery Science <span>Explorer</span>
+            </span>
+          </NavLink>
+          <nav className={styles.nav} aria-label="Main">
+            {NAV_ITEMS.map(({ path, label, icon: Icon }) => (
+              <NavLink key={path} to={path} className={({ isActive }) => `${styles.navLink} ${isActive ? styles.active : ""}`}>
+                <Icon aria-hidden="true" />
+                {label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className={styles.search}>
+            <GlobalSearch />
+          </div>
+          <div className={styles.end}>
+            <span className={`${styles.badge} ${live ? styles.badgeLive : ""}`}>{badge}</span>
+            <IconButton label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} variant="plain" onClick={toggle}>
+              {theme === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+            </IconButton>
+          </div>
+        </div>
+      </header>
+      <main className={styles.main} id="main" tabIndex={-1}>
+        <Outlet />
+      </main>
+      {!chatPage && (
+        <footer className={styles.footer}>
+          <span>Battery Science proof of concept, on Amplifi</span>
+        </footer>
+      )}
       <DetailDialogs />
     </div>
   );

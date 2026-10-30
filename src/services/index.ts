@@ -1,44 +1,18 @@
 import type { AppConfig } from "./config";
-import { createHttpAmplifiClient, createMockAmplifiClient, type AmplifiClient } from "./amplifiApi";
-import { createHttpDocumentService, createMockDocumentService, type DocumentService } from "./documentService";
-import { createHttpResearchService, createMockResearchService, type ResearchService } from "./researchService";
+import { createHttpAmplifiClient, type AmplifiClient } from "./amplifiApi";
+import { createHttpExplorerClient, type ExplorerClient } from "./explorerApi";
 
 export interface Services {
   config: AppConfig;
-  research: ResearchService;
-  documents: DocumentService;
   amplifi: AmplifiClient;
+  explorer: ExplorerClient;
 }
 
-/** The single place that decides between mock adapters and real backends. */
+/** Everything comes from Amplifi through the proxy: the chat, and the Explorer's data. */
 export function createServices(config: AppConfig): Services {
-  const amplifi = createAmplifi(config);
-  if (config.mode === "live") {
-    return {
-      config,
-      research: createHttpResearchService(config),
-      documents: createHttpDocumentService(config),
-      amplifi,
-    };
-  }
-  return {
-    config,
-    research: createMockResearchService(),
-    documents: createMockDocumentService(),
-    amplifi,
-  };
+  return { config, amplifi: createHttpAmplifiClient(config), explorer: createHttpExplorerClient(config) };
 }
 
-/** Chat follows `chatMode`; Find with Amplifi follows `mode`, since the proxy only serves chat so far. */
-function createAmplifi(config: AppConfig): AmplifiClient {
-  const live = createHttpAmplifiClient(config);
-  const mock = createMockAmplifiClient();
-  return {
-    ask: (config.chatMode === "live" ? live : mock).ask,
-    findValue: (config.mode === "live" ? live : mock).findValue,
-  };
-}
-
-export type { AmplifiClient, DocumentService, ResearchService };
+export type { AmplifiClient, ExplorerClient };
 export { readConfig, type AppConfig, type RouterMode } from "./config";
 export { ApiError, describeError, isAbort } from "./http";

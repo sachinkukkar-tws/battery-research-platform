@@ -11,9 +11,10 @@
   color: var(--on-btn);
   cursor: pointer;
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--text-xs);
   letter-spacing: 0.04em;
   transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.12s var(--ease);
+  text-decoration: none;
 }
 .btn:active:not(:disabled) { transform: scale(0.97); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }

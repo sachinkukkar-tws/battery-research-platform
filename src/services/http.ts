@@ -68,6 +68,9 @@ export function withTimeout(timeoutMs: number, outer?: AbortSignal) {
   };
 }
 
+const isDetail = (b: unknown): b is { detail: string } =>
+  typeof b === "object" && b !== null && typeof (b as { detail?: unknown }).detail === "string";
+
 export interface RequestOptions<T> {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
@@ -78,11 +81,13 @@ export interface RequestOptions<T> {
   parse: (raw: unknown) => T;
   /** Name used in error messages, e.g. "The platform" or "Amplifi". */
   service: string;
+  /** Use the `detail` of a JSON error body as the message, for services whose errors explain the fix. */
+  useDetail?: boolean;
   fetchImpl?: typeof fetch;
 }
 
 export async function requestJson<T>(url: string, opts: RequestOptions<T>): Promise<T> {
-  const { method = "GET", body, headers, signal, timeoutMs, parse, service, fetchImpl = fetch } = opts;
+  const { method = "GET", body, headers, signal, timeoutMs, parse, service, useDetail = false, fetchImpl = fetch } = opts;
   const t = withTimeout(timeoutMs, signal);
   let res: Response;
   try {
@@ -100,7 +105,11 @@ export async function requestJson<T>(url: string, opts: RequestOptions<T>): Prom
     throw new ApiError("network", `Couldn’t reach ${service.replace(/^The /, "the ")}. Check your connection and try again.`);
   }
   t.done();
-  if (!res.ok) throw errorForStatus(res.status, service);
+  if (!res.ok) {
+    const error = errorForStatus(res.status, service);
+    const detail = useDetail ? await res.json().then((b: unknown) => (isDetail(b) ? b.detail : null), () => null) : null;
+    throw detail ? new ApiError(error.kind, detail, res.status) : error;
+  }
   if (res.status === 204) return parse(null);
   let raw: unknown;
   try {

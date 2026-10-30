@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { ArrowUp, Square } from "lucide-react";
-import type { LibraryPaper } from "@/types";
+import type { ExplorerPaper } from "@/types";
 import { useAutoGrow } from "@/hooks/useAutoGrow";
 import styles from "./Chat.module.css";
 
 interface ComposerProps {
   busy: boolean;
   scope: string | null;
-  papers: LibraryPaper[];
+  papers: Pick<ExplorerPaper, "id" | "firstAuthor">[];
   focusRequest: number;
   autoFocus: boolean;
   onScopeChange: (paperId: string | null) => void;
@@ -66,7 +66,7 @@ export function Composer({ busy, scope, papers, focusRequest, autoFocus, onScope
           <option value="">All papers</option>
           {papers.map((p) => (
             <option key={p.id} value={p.id}>
-              {p.id}, {p.authors}
+              {p.firstAuthor ? `${p.id}, ${p.firstAuthor} et al.` : p.id}
             </option>
           ))}
         </select>

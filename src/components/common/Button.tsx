@@ -1,4 +1,4 @@
-import { forwardRef, type ButtonHTMLAttributes } from "react";
+import { forwardRef, type AnchorHTMLAttributes, type ButtonHTMLAttributes } from "react";
 import styles from "./Button.module.css";
 
 export type ButtonVariant = "primary" | "quiet" | "success" | "link";
@@ -26,6 +26,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     </button>
   );
 });
+
+/** A link that looks like a Button, for actions that open another page or file. */
+export function ButtonLink({ variant = "primary", className, ...rest }: AnchorHTMLAttributes<HTMLAnchorElement> & { variant?: ButtonVariant }) {
+  return <a className={[styles.btn, styles[variant], className].filter(Boolean).join(" ")} {...rest} />;
+}
 
 export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   label: string;

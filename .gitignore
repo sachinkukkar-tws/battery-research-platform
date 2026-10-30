@@ -5,3 +5,4 @@ dist
 .env.amplifi
 *.tsbuildinfo
 dist-standalone
+server/cache/

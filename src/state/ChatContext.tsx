@@ -25,7 +25,7 @@ interface ChatApi {
 const ChatContext = createContext<ChatApi | null>(null);
 
 export function ChatProvider({ children }: { children: ReactNode }) {
-  const { amplifi, config } = useServices();
+  const { amplifi } = useServices();
   const [initial] = useState(loadThread);
   const [messages, dispatch] = useReducer(chatReducer, initial.messages);
   const [conversationId, setConversationId] = useState<string | null>(initial.conversationId);
@@ -41,7 +41,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   // Cancel any in-flight request if the provider unmounts.
   useEffect(() => () => controllerRef.current?.abort(), []);
 
-  const expectedOrigin: AnswerOrigin = config.chatMode === "live" ? "amplifi" : "mock";
+  const expectedOrigin: AnswerOrigin = "amplifi";
 
   const send = useCallback(
     async (raw: string, scopeOverride?: string | null) => {

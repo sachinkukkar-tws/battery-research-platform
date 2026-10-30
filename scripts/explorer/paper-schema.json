@@ -1,0 +1,274 @@
+{
+  "type": "object",
+  "description": "What this one paper reports. Use only passages you retrieved from this paper. Copy names and values exactly as the paper writes them. Leave a list empty or a field null when the passages don't state it. Never use general knowledge or typical values.",
+  "properties": {
+    "paper": {
+      "type": "object",
+      "description": "How the paper identifies itself on its first page, copied exactly as printed",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The paper's full title, copied exactly"
+        },
+        "firstAuthor": {
+          "type": "string",
+          "description": "The family name of the first author"
+        },
+        "journal": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The journal's name as printed, or null"
+        },
+        "year": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "The year of publication, or null"
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The DOI, such as 10.1002/aenm.202400002, or null"
+        }
+      },
+      "required": [
+        "title",
+        "firstAuthor",
+        "journal",
+        "year",
+        "doi"
+      ],
+      "additionalProperties": false
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "research article",
+        "review"
+      ]
+    },
+    "battery": {
+      "type": "string",
+      "enum": [
+        "sodium-ion",
+        "lithium-ion"
+      ]
+    },
+    "anodes": {
+      "type": "array",
+      "description": "Each anode sample this paper makes and tests itself (empty for a review)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sample": {
+            "type": "string",
+            "description": "The sample name exactly as the paper writes it, with nothing added"
+          },
+          "family": {
+            "type": "string",
+            "enum": [
+              "hard carbon",
+              "graphite/hard carbon",
+              "graphite",
+              "silicon-carbon",
+              "other"
+            ],
+            "description": "graphite/hard carbon for a composite of graphite and hard carbon"
+          },
+          "precursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The starting material as the paper names it, or null"
+          },
+          "method": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "How the sample was made, in the paper's words, or null"
+          },
+          "temperature": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The final heat-treatment temperature with its unit, only if the quote states it, otherwise null"
+          },
+          "quote": {
+            "type": "string",
+            "description": "A passage copied word for word from this paper, changing and adding nothing, not even a full stop. It must contain the values in this entry."
+          }
+        },
+        "required": [
+          "sample",
+          "family",
+          "precursor",
+          "method",
+          "temperature",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "fullCells": {
+      "type": "array",
+      "description": "Each full cell this paper assembles and tests",
+      "items": {
+        "type": "object",
+        "properties": {
+          "anodeSample": {
+            "type": "string",
+            "description": "The anode sample name exactly as the paper writes it"
+          },
+          "cathode": {
+            "type": "string",
+            "description": "The cathode exactly as the paper names it"
+          },
+          "cathodeFormula": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The cathode's chemical formula as the paper writes it, or null"
+          },
+          "cellFormat": {
+            "type": "string",
+            "enum": [
+              "coin",
+              "pouch",
+              "cylindrical",
+              "not stated"
+            ]
+          },
+          "quote": {
+            "type": "string",
+            "description": "A passage copied word for word from this paper that names this cathode and anode, changing and adding nothing"
+          },
+          "cathodeShortName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The abbreviation the paper uses for the cathode, such as NVP, or null"
+          }
+        },
+        "required": [
+          "anodeSample",
+          "cathode",
+          "cathodeFormula",
+          "cellFormat",
+          "quote",
+          "cathodeShortName"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "materials": {
+      "type": "array",
+      "description": "The electrolyte, separator, current collectors, binder and additives this paper uses",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "electrolyte",
+              "separator",
+              "current collector",
+              "binder",
+              "additive"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "description": "Exactly as the quote states it"
+          },
+          "quote": {
+            "type": "string",
+            "description": "A passage copied word for word from this paper that contains the value, changing and adding nothing"
+          }
+        },
+        "required": [
+          "kind",
+          "value",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "performance": {
+      "type": "array",
+      "description": "Values this paper reports for its own anode samples and full cells",
+      "items": {
+        "type": "object",
+        "properties": {
+          "sample": {
+            "type": "string",
+            "description": "The anode sample name exactly as the paper writes it; for a full cell, the anode sample in it"
+          },
+          "metric": {
+            "type": "string",
+            "enum": [
+              "reversible capacity",
+              "initial coulombic efficiency",
+              "capacity retention",
+              "capacity after cycling",
+              "rate capability",
+              "energy density",
+              "other"
+            ],
+            "description": "Capacity retention is a percentage; capacity after cycling is a capacity"
+          },
+          "value": {
+            "type": "string",
+            "description": "The value with its unit, copied exactly from the quote"
+          },
+          "condition": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The current density or C-rate, number of cycles and temperature, as the quote states them, or null"
+          },
+          "testType": {
+            "type": "string",
+            "enum": [
+              "half cell",
+              "full cell"
+            ]
+          },
+          "quote": {
+            "type": "string",
+            "description": "A passage copied word for word from this paper that contains the value, changing and adding nothing"
+          }
+        },
+        "required": [
+          "sample",
+          "metric",
+          "value",
+          "condition",
+          "testType",
+          "quote"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "paper",
+    "kind",
+    "battery",
+    "anodes",
+    "fullCells",
+    "materials",
+    "performance"
+  ],
+  "additionalProperties": false
+}

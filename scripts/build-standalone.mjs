@@ -1,12 +1,13 @@
 // Builds a single self-contained HTML file (JS and CSS inlined), like the original prototype.
-// Usage: npm run build:standalone. Uses the memory router and mock data.
+// Usage: npm run build:standalone. Uses the memory router. The file has no data of its own:
+// like the website, it loads everything from the Amplifi proxy at VITE_AMPLIFI_PROXY_URL.
 import { execSync } from "node:child_process";
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 execSync("npx vite build --outDir dist-standalone --emptyOutDir", {
   stdio: "inherit",
-  env: { ...process.env, VITE_ROUTER_MODE: "memory", VITE_DATA_MODE: "mock" },
+  env: { ...process.env, VITE_ROUTER_MODE: "memory" },
 });
 
 const dir = "dist-standalone";

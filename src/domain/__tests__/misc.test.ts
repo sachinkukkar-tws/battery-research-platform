@@ -1,8 +1,5 @@
 import { amplifiPaperId, extractCitationIds, libraryPaperId, splitCitedText } from "../citations";
 import { formulaParts } from "../chemistry";
-import { validatePdf } from "../upload";
-import { filterLibrary, DEFAULT_LIBRARY_FILTERS } from "../library";
-import { MOCK_LIBRARY } from "@/data/mockData";
 
 describe("citations", () => {
   it("splits text around citation markers", () => {
@@ -39,25 +36,9 @@ describe("chemical formulae", () => {
     const parts = formulaParts("Na3V2(PO4)3");
     expect(parts.filter((p) => p.sub).map((p) => p.text)).toEqual(["3", "2", "4", "3"]);
   });
-});
 
-describe("PDF validation", () => {
-  const MB = 1024 * 1024;
-  it("accepts PDFs within the limit, including a blank MIME type", () => {
-    expect(validatePdf({ name: "a.pdf", size: MB, type: "application/pdf" }, 50 * MB).ok).toBe(true);
-    expect(validatePdf({ name: "a.PDF", size: MB, type: "" }, 50 * MB).ok).toBe(true);
-  });
-  it("rejects other types, empty files and oversized files with a reason", () => {
-    expect(validatePdf({ name: "a.docx", size: MB, type: "" }, 50 * MB)).toMatchObject({ ok: false, reason: expect.stringMatching(/isn’t a PDF/) });
-    expect(validatePdf({ name: "a.pdf", size: MB, type: "text/html" }, 50 * MB).ok).toBe(false);
-    expect(validatePdf({ name: "a.pdf", size: 0, type: "application/pdf" }, 50 * MB)).toMatchObject({ ok: false, reason: expect.stringMatching(/empty/) });
-    expect(validatePdf({ name: "a.pdf", size: 60 * MB, type: "application/pdf" }, 50 * MB)).toMatchObject({ ok: false, reason: expect.stringMatching(/limit is 50\.0 MB/) });
-  });
-});
-
-describe("library filtering", () => {
-  it("searches ID, authors and title case-insensitively", () => {
-    expect(filterLibrary(MOCK_LIBRARY, { ...DEFAULT_LIBRARY_FILTERS, query: "severson" }).map((p) => p.id)).toEqual(["C2"]);
-    expect(filterLibrary(MOCK_LIBRARY, { ...DEFAULT_LIBRARY_FILTERS, status: "Extracted" }).map((p) => p.id)).toEqual(["CP02"]);
+  it("keeps a fraction whole in one subscript", () => {
+    const parts = formulaParts("NaNi1/3Fe1/3Mn1/3O2");
+    expect(parts.filter((p) => p.sub).map((p) => p.text)).toEqual(["1/3", "1/3", "1/3", "2"]);
   });
 });

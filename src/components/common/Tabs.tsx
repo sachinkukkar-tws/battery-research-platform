@@ -1,61 +1,68 @@
-import { useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useRef, type KeyboardEvent, type ReactNode } from "react";
 import styles from "./Tabs.module.css";
 
-export interface TabDef<T extends string> {
-  id: T;
-  label: ReactNode;
-}
-
-interface TabsProps<T extends string> {
-  /** Shared with tabPanelProps() so tabs and panels reference each other. Use useId() in the parent. */
-  idBase: string;
+export interface TabItem {
+  id: string;
   label: string;
-  tabs: readonly TabDef<T>[];
-  active: T;
-  onChange: (id: T) => void;
+  /** How many items the view holds, shown beside its label. */
+  count?: number;
+  content: ReactNode;
 }
 
-/** WAI-ARIA tabs: arrow keys, Home and End move between tabs; only the active tab is in the tab order. */
-export function Tabs<T extends string>({ idBase: base, label, tabs, active, onChange }: TabsProps<T>) {
-  const refs = useRef(new Map<T, HTMLButtonElement>());
-  const onKeyDown = (e: KeyboardEvent) => {
-    const i = tabs.findIndex((t) => t.id === active);
-    const n = tabs.length;
-    const next = { ArrowRight: (i + 1) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 }[e.key];
-    if (next === undefined) return;
+const KEYS: Record<string, (i: number, n: number) => number> = {
+  ArrowRight: (i, n) => (i + 1) % n,
+  ArrowLeft: (i, n) => (i - 1 + n) % n,
+  Home: () => 0,
+  End: (_, n) => n - 1,
+};
+
+/** One view at a time, chosen from a row of tabs. The arrow keys move between the tabs. */
+export function Tabs({ label, items, value, onChange }: { label: string; items: TabItem[]; value: string; onChange: (id: string) => void }) {
+  const base = useId();
+  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const current = items.find((t) => t.id === value) ?? items[0];
+
+  const onKeyDown = (e: KeyboardEvent, i: number) => {
+    const move = KEYS[e.key];
+    if (!move) return;
     e.preventDefault();
-    const id = tabs[next]!.id;
-    onChange(id);
-    refs.current.get(id)?.focus();
+    const next = move(i, items.length);
+    onChange(items[next]!.id);
+    tabs.current[next]?.focus();
   };
+
   return (
-    <div className={styles.tabs} role="tablist" aria-label={label} onKeyDown={onKeyDown}>
-      {tabs.map((t) => (
-        <button
-          key={t.id}
-          ref={(el) => {
-            if (el) refs.current.set(t.id, el);
-            else refs.current.delete(t.id);
-          }}
-          type="button"
-          role="tab"
-          id={`${base}-tab-${t.id}`}
-          aria-controls={`${base}-panel-${t.id}`}
-          aria-selected={t.id === active}
-          tabIndex={t.id === active ? 0 : -1}
-          onClick={() => onChange(t.id)}
-        >
-          {t.label}
-        </button>
-      ))}
+    <div>
+      <div role="tablist" aria-label={label} className={styles.list}>
+        {items.map((t, i) => {
+          const selected = t.id === current?.id;
+          return (
+            <button
+              key={t.id}
+              ref={(el) => {
+                tabs.current[i] = el;
+              }}
+              type="button"
+              role="tab"
+              id={`${base}-${t.id}-tab`}
+              aria-selected={selected}
+              aria-controls={`${base}-${t.id}-panel`}
+              tabIndex={selected ? 0 : -1}
+              className={styles.tab}
+              onClick={() => onChange(t.id)}
+              onKeyDown={(e) => onKeyDown(e, i)}
+            >
+              {t.label}
+              {t.count !== undefined && <span className={styles.count}>{t.count}</span>}
+            </button>
+          );
+        })}
+      </div>
+      {current && (
+        <div role="tabpanel" id={`${base}-${current.id}-panel`} aria-labelledby={`${base}-${current.id}-tab`} tabIndex={0} className={styles.panel}>
+          {current.content}
+        </div>
+      )}
     </div>
   );
-}
-
-export function tabPanelProps(base: string, id: string) {
-  return { role: "tabpanel", id: `${base}-panel-${id}`, "aria-labelledby": `${base}-tab-${id}`, tabIndex: 0 } as const;
-}
-
-export function TabCount({ n }: { n: number }) {
-  return n ? <span className={styles.count}>{n}</span> : null;
 }

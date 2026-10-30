@@ -1,5 +1,5 @@
-/** Where an answer came from. "mock" answers must always be labelled as demo answers in the UI. */
-export type AnswerOrigin = "amplifi" | "mock";
+/** Where an answer came from: every answer comes from Amplifi. */
+export type AnswerOrigin = "amplifi";
 
 export interface Citation {
   paperId: string;
@@ -41,18 +41,4 @@ export interface AmplifiAnswer {
   citations: Citation[];
   origin: AnswerOrigin;
   conversationId: string | null;
-}
-
-export interface FindValueRequest {
-  paperId: string;
-  sample: string;
-  field: string;
-  signal?: AbortSignal;
-}
-
-export interface FoundValue {
-  value: string | null;
-  page: string | null;
-  quote: string;
-  origin: AnswerOrigin;
 }

@@ -15,7 +15,7 @@ export const CitedText = memo(function CitedText({ text, onCite }: { text: strin
         if (href?.startsWith(CITE_HREF_PREFIX)) {
           const paperId = href.slice(CITE_HREF_PREFIX.length);
           return (
-            <button type="button" className={styles.cite} onClick={() => onCite(paperId)} aria-label={`Source ${paperId}, open in the Library`}>
+            <button type="button" className={styles.cite} onClick={() => onCite(paperId)} aria-label={`Source ${paperId}, open the paper`}>
               {paperId}
             </button>
           );

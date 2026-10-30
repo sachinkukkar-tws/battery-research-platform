@@ -1,5 +1,5 @@
 import { readConfig } from "../config";
-import { createHttpAmplifiClient, createMockAmplifiClient, parseChatResponse } from "../amplifiApi";
+import { createHttpAmplifiClient, parseChatResponse } from "../amplifiApi";
 
 describe("Amplifi proxy contract", () => {
   it("uses structured citations when present", () => {
@@ -25,7 +25,7 @@ describe("Amplifi proxy contract", () => {
       calls.push({ url: String(url), body: JSON.parse(String(init?.body)), headers: init?.headers });
       return new Response(JSON.stringify({ answer: "ok [CP01]" }), { status: 200 });
     };
-    const config = { ...readConfig({}), mode: "live" as const, amplifiProxyUrl: "/amplifi" };
+    const config = { ...readConfig({}), amplifiProxyUrl: "/amplifi" };
     const client = createHttpAmplifiClient(config, fetchImpl);
     const onText = vi.fn();
     const a = await client.ask({ question: "Q?", scope: "CP01", history: [{ role: "user", text: "earlier" }], conversationId: null, onText });
@@ -42,45 +42,10 @@ describe("Amplifi proxy contract", () => {
       bodies.push(JSON.parse(String(init?.body)));
       return new Response(JSON.stringify({ answer: "Capacity fade [C01_Edge_2021.pdf]." }), { status: 200 });
     };
-    const config = { ...readConfig({}), mode: "live" as const, amplifiProxyUrl: "/amplifi" };
+    const config = { ...readConfig({}), amplifiProxyUrl: "/amplifi" };
     const a = await createHttpAmplifiClient(config, fetchImpl).ask({ question: "Q?", scope: "C1", history: [], conversationId: null });
     expect(bodies[0]).toMatchObject({ scope: "C01" });
     expect(a.citations).toEqual([{ paperId: "C1", page: null }]);
     expect(parseChatResponse({ answer: "x", citations: [{ paperId: "C01", page: "2" }] }).citations).toEqual([{ paperId: "C1", page: "2" }]);
-  });
-});
-
-describe("mock Amplifi", () => {
-  const client = createMockAmplifiClient({ thinkMs: 0, wordMs: [0, 0] });
-
-  it("labels every answer as mock", async () => {
-    const a = await client.ask({ question: "What is S-HC-2 in CP09 made from?", scope: null, history: [], conversationId: null });
-    expect(a.origin).toBe("mock");
-    expect(a.citations).toEqual([{ paperId: "CP09", page: "2" }]);
-  });
-
-  it("says plainly when it can't answer", async () => {
-    const a = await client.ask({ question: "Something else", scope: null, history: [], conversationId: null });
-    expect(a.text).toMatch(/^Demo mode can only answer/);
-    expect(a.citations).toEqual([]);
-  });
-
-  it("streams partial text and can be stopped", async () => {
-    const c = new AbortController();
-    const seen: string[] = [];
-    const slow = createMockAmplifiClient({ thinkMs: 0, wordMs: [5, 5] });
-    const p = slow.ask({
-      question: "CP07",
-      scope: null,
-      history: [],
-      conversationId: null,
-      signal: c.signal,
-      onText: (t) => {
-        seen.push(t);
-        if (seen.length === 3) c.abort();
-      },
-    });
-    await expect(p).rejects.toMatchObject({ kind: "aborted" });
-    expect(seen).toHaveLength(3);
   });
 });

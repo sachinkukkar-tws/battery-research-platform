@@ -5,11 +5,12 @@ export interface FormulaPart {
 
 /**
  * Splits a chemical formula into normal and subscript runs: "Na3V2(PO4)3" becomes
- * Na, 3(sub), V, 2(sub), (PO, 4(sub), ), 3(sub). Digits are subscripted only after a letter or ")".
+ * Na, 3(sub), V, 2(sub), (PO, 4(sub), ), 3(sub). Digits are subscripted only after a letter or ")",
+ * and a fraction stays whole: "NaNi1/3Fe1/3Mn1/3O2" subscripts each "1/3".
  */
 export function formulaParts(formula: string): FormulaPart[] {
   const parts: FormulaPart[] = [];
-  const re = /(?<=[A-Za-z)])(\d+(?:\.\d+)?)/g;
+  const re = /(?<=[A-Za-z)])(\d+(?:\.\d+)?(?:\/\d+)?)/g;
   let last = 0;
   for (const m of formula.matchAll(re)) {
     const i = m.index ?? 0;

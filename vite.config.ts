@@ -7,19 +7,19 @@ export default defineConfig(({ mode }) => {
   // Targets may come from the shell or from .env. Neither has a VITE_ prefix, so neither reaches the browser.
   const env = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
   const apiTarget = env.DEV_API_TARGET;
-  const amplifiTarget = env.AMPLIFI_PROXY_TARGET || apiTarget;
-  const proxy: Record<string, ProxyOptions> = {};
+  // Everything the app shows comes through the Amplifi proxy, so /amplifi always goes to it (default port 8787).
+  const amplifiTarget = env.AMPLIFI_PROXY_TARGET || apiTarget || "http://localhost:8787";
+  const proxy: Record<string, ProxyOptions> = { "/amplifi": { target: amplifiTarget, changeOrigin: true } };
   if (apiTarget) proxy["/api"] = { target: apiTarget, changeOrigin: true };
-  if (amplifiTarget) proxy["/amplifi"] = { target: amplifiTarget, changeOrigin: true };
 
   return {
     plugins: [react()],
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     server: {
       port: 5173,
-      // In live mode, point VITE_PLATFORM_API_BASE / VITE_AMPLIFI_PROXY_URL at relative paths
-      // (e.g. /api, /amplifi) and proxy them to your backend here so the browser never sees credentials.
-      proxy: Object.keys(proxy).length ? proxy : undefined,
+      // VITE_AMPLIFI_PROXY_URL stays a relative path (/amplifi), so the browser only talks to its own origin
+      // and never sees the Amplifi login.
+      proxy,
     },
     test: {
       globals: true,

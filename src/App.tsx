@@ -9,7 +9,7 @@ const FUTURE = { v7_startTransition: true, v7_relativeSplatPath: true } as const
 
 function Router({ mode, children }: { mode: RouterMode; children: ReactNode }) {
   if (mode === "hash") return <HashRouter future={FUTURE}>{children}</HashRouter>;
-  if (mode === "memory") return <MemoryRouter future={FUTURE} initialEntries={["/workspace"]}>{children}</MemoryRouter>;
+  if (mode === "memory") return <MemoryRouter future={FUTURE} initialEntries={["/explore"]}>{children}</MemoryRouter>;
   return <BrowserRouter future={FUTURE}>{children}</BrowserRouter>;
 }
 

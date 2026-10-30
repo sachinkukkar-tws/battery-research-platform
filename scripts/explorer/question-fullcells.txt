@@ -1,0 +1,1 @@
+Answer using only paper {pid}, the file {file}. Find that file first, then search only that file for "full cell" and for "cathode". List every full cell it assembles, with each cathode.
