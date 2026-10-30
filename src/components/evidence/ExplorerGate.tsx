@@ -71,7 +71,7 @@ export function ExplorerGate({ children }: { children: (data: ExplorerData) => R
         <div className={styles.gate}>
           <p className={styles.empty}>
             The Explorer shows what Amplifi extracts from the papers, with every value checked against its PDF. Nothing has been extracted
-            yet. Amplifi is asked two questions about each paper, and the result is kept for next time.
+            yet. Amplifi is asked three questions about each paper, and the result is kept for next time.
           </p>
           <RefreshButton>Extract the papers with Amplifi</RefreshButton>
           <RefreshProgress />
@@ -101,7 +101,7 @@ export function DataStatus({ data }: { data: ExplorerData }) {
     <div className={styles.status}>
       <p title={data.method}>
         From Amplifi, {formatDateTime(data.extractedAt)} · every value checked against its PDF
-        {left > 0 && ` · ${left} that couldn’t be matched are left out`}
+        {left > 0 && ` · ${left} that didn’t pass the checks are left out`}
       </p>
       <RefreshButton />
       <RefreshProgress />

@@ -96,7 +96,7 @@ npm run dev
 **5. Check it works.**
 
 1. <http://localhost:8787/amplifi/ping> shows `"ok":true` (the proxy has logged in) and `"structured":true`.
-2. Open <http://localhost:5173>. The first time, the Explorer says **No data from Amplifi yet**. This doesn't mean the papers are missing from Amplifi: the Explorer just hasn't asked about them yet. Click **Extract the papers with Amplifi**: the proxy asks Amplifi two questions per paper and checks every answer against the PDF. This takes several minutes, and the page shows how far it has got.
+2. Open <http://localhost:5173>. The first time, the Explorer says **No data from Amplifi yet**. This doesn't mean the papers are missing from Amplifi: the Explorer just hasn't asked about them yet. Click **Extract the papers with Amplifi**: the proxy asks Amplifi three questions per paper and checks every answer against the PDF. This takes several minutes, and the page shows how far it has got.
 3. When it's done, the badge says **Amplifi data**. Click a value, then **Open the PDF at page …**. The paper opens at that page.
 4. On <http://localhost:5173/ask>, pick **CP10** in the chat's paper list and ask *"Which electrolyte gave the higher ICE?"* A good answer gives **92.2%** for the ether-based electrolyte against **87.49%** for the ester-based one, with **CP10** citations.
 
@@ -104,11 +104,12 @@ npm run dev
 
 Amplifi reads the papers and the proxy checks what it says. The proxy keeps the latest checked result in `server/cache/explorer.json` (gitignored) and serves it at `GET /amplifi/explorer`, so the Explorer and Papers load at once and show the same data until the next refresh.
 
-**Refresh from Amplifi** (`POST /amplifi/explorer/refresh`) runs three steps on the proxy, and `GET /amplifi/explorer/status` reports how far it has got:
+**Refresh from Amplifi** (`POST /amplifi/explorer/refresh`) runs four steps on the proxy, and `GET /amplifi/explorer/status` reports how far it has got:
 
 1. `scripts/explorer/extract.py` asks Amplifi one structured question per paper in `AMPLIFI_PAPERS_DIR`, through the proxy's `/amplifi/structured` route, using the JSON Schema in `scripts/explorer/paper-schema.json`: the paper's title, authors, journal, year and DOI, its anode samples and how they were made, its full cells, materials and performance. Naming the paper's file in the question (`question.txt`) is what makes the agent search the right paper; questions about all the papers at once miss or invent some.
 2. It asks each paper once more, only about its full cells (`question-fullcells.txt`), because the first answer sometimes misses one.
-3. `scripts/explorer/build_data.py` checks every value against its PDF. A value is shown only when its quote is on a page of the PDF and its numbers are in the quote; that page is the one the app opens (Amplifi's own page numbers are wrong). Amplifi often joins passages with "...": each passage is checked on its own, and only the passages found in the PDF are shown. Fields the quote doesn't support, such as a guessed temperature, are cleared, and a paper's title, authors, journal, year and DOI are shown only when the PDF contains them. Cathodes are grouped across papers by the formula the papers give, and named by the short name Amplifi read in them.
+3. It asks each paper a third time, only about its cell materials (`question-materials.txt`): the electrolyte, separator, binder, current collector and additives, each copied word for word. The first answer often adds notes to a value, which then fails the check.
+4. `scripts/explorer/build_data.py` checks every value against its PDF. A value is shown only when its quote is on a page of the PDF and its numbers are in the quote; that page is the one the app opens (Amplifi's own page numbers are wrong). Amplifi often joins passages with "...": each passage is checked on its own, and only the passages found in the PDF are shown. Fields the quote doesn't support, such as a guessed temperature, are cleared, and a paper's title, authors, journal, year and DOI are shown only when the PDF contains them. Cathodes are grouped across papers by the formula the papers give, and named by the short name Amplifi read in them.
 
 Each refresh keeps Amplifi's answers in `server/cache/answers/<time>`. Each paper then uses whichever of this refresh's answers and the previous refresh's has more checked values, so a paper Amplifi can't answer this time keeps its last answers.
 
@@ -125,7 +126,11 @@ python scripts/explorer/extract.py <pdf folder> server/cache/answers/manual/cell
 ```
 
 ```bash
-python scripts/explorer/build_data.py <pdf folder> server/cache/answers/manual/main --cells server/cache/answers/manual/cells
+python scripts/explorer/extract.py <pdf folder> server/cache/answers/manual/materials CP01 CP02 CP03 --question scripts/explorer/question-materials.txt
+```
+
+```bash
+python scripts/explorer/build_data.py <pdf folder> server/cache/answers/manual/main --cells server/cache/answers/manual/cells --materials server/cache/answers/manual/materials
 ```
 
 A question that passes nginx's 60-second limit is asked up to three times; long papers may need `AMPLIFI_BASE_URL` pointed at `http://localhost:8000/api/v3`.

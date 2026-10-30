@@ -1,0 +1,1 @@
+Answer using only paper {pid}, the file {file}. Find that file first, then search only that file for "electrolyte", "separator", "binder", "current collector" and "additive". List every cell material it states, with its kind. Copy each value word for word as the paper writes it, with no notes, brackets or explanations added, and leave out any material the paper doesn't state.

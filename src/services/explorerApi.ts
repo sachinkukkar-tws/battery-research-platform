@@ -15,7 +15,7 @@ export interface RefreshStatus {
   startedAt: string | null;
   finishedAt: string | null;
   stage: string | null;
-  /** Amplifi's answers so far, two questions per paper. */
+  /** Amplifi's answers so far, three questions per paper. */
   done: number;
   failed: number;
   total: number;

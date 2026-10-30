@@ -1,11 +1,12 @@
 """Build the Explorer's data from Amplifi's answers, checked against the PDFs, as JSON for the proxy to serve.
 
-python scripts/explorer/build_data.py <pdf_dir> <answers_dir> [<answers_dir> ...] [--cells <answers_dir> ...] [--out <file>]
+python scripts/explorer/build_data.py <pdf_dir> <answers_dir> [<answers_dir> ...] [--cells <answers_dir> ...] [--materials <answers_dir> ...] [--out <file>]
 
 Everything in the output comes from Amplifi's answers or from the PDFs; nothing is added by hand.
 Each answers folder holds one run of extract.py. For each paper the run with the most verified values is kept,
-and full cells (with their full-cell values) that only another run found are added; --cells runs, asked only
-about full cells (question-fullcells.txt), are used for that alone. Each item gets the PDF page its quote is on,
+and full cells (with their full-cell values) and materials that only another run found are added. --cells runs,
+asked only about full cells (question-fullcells.txt), and --materials runs, asked only about the cell materials
+(question-materials.txt), are used for that alone. Each item gets the PDF page its quote is on,
 and a status:
 - verified: the quote is on that page and the item's values are in the quote
 - quote only: the quote is in the paper, but a value isn't in it
@@ -40,6 +41,10 @@ QUOTES = {"‘": "'", "’": "'", "“": '"', "”": '"'}
 PLACEHOLDER = re.compile(r"^\s*(not\b|n/?a\b|none\b|unknown\b|unspecified\b)", re.I)
 COUNTER_ELECTRODE = re.compile(r"\b(sodium|lithium|na|li)\b.*\b(metal|foil)\b|metallic (sodium|lithium)", re.I)
 HEDGE = re.compile(r"\b(likely|typical(ly)?|probably|assumed|presumably|not (explicitly )?stated|unknown|see )", re.I)
+# Reference numbers such as [12], [3, 4] or [17-19]: a research paper's sentence with them describes other papers' work.
+CITATION = re.compile(r"\[\s*\d+(?:\s*[-–,]\s*\d+)*\s*\]")
+# A material is a name, such as "1 M NaPF6 in diglyme"; a longer value is a sentence about something else.
+MATERIAL_WORDS = 10
 sys.stdout.reconfigure(encoding="utf-8")
 
 
@@ -127,16 +132,21 @@ def has_all(text, checked: str) -> bool:
     return bool(found) and all(n in checked for n in found)
 
 
-def problem(section: str, item: dict, checked: str):
-    """What the matched quote doesn't contain, or None."""
+def problem(section: str, item: dict, checked: str, kind=None):
+    """What the matched quote doesn't contain, or why it doesn't show the item, or None."""
     if section == "performance" and not has_all(item["value"], checked):
         return f"value {item['value']!r} not in quote"
     if section == "fullCells":
         names = [loose(key(n)) for n in (item["cathode"], item.get("cathodeFormula"), item.get("cathodeShortName")) if n and key(n)]
         if not any(n in checked for n in names):
             return f"cathode {item['cathode']!r} not in quote"
-    if section == "materials" and loose(key(item["value"])) not in checked:
-        return f"value {item['value']!r} not in quote"
+    if section == "materials":
+        if loose(key(item["value"])) not in checked:
+            return f"value {item['value']!r} not in quote"
+        if len(item["value"].split()) > MATERIAL_WORDS:
+            return f"value {item['value']!r} is a sentence, not a material"
+        if kind != "review" and CITATION.search(item.get("quote") or ""):
+            return "the sentence cites other papers, so it isn't this paper's own material"
     return None
 
 
@@ -177,7 +187,7 @@ def check_run(pid: str, body: dict, pages: list, whole: str):
                     notes.append(f"    dropped    {item['cathode']!r}: not a full-cell cathode")
                     continue
                 page, checked, shown = locate(item.get("quote"), pages)
-                why = problem(section, item, checked) if page else None
+                why = problem(section, item, checked, record["kind"]) if page else None
                 status = "unverified" if not page else "quote only" if why else "verified"
                 what = item.get("sample") or item.get("cathode") or item.get("value")
                 if shown != item.get("quote"):
@@ -211,6 +221,7 @@ parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 parser.add_argument("pdf_dir", type=pathlib.Path)
 parser.add_argument("runs", nargs="+", type=pathlib.Path)
 parser.add_argument("--cells", nargs="*", type=pathlib.Path, default=[], help="runs used only to add full cells")
+parser.add_argument("--materials", nargs="*", type=pathlib.Path, default=[], help="runs used only to add materials")
 parser.add_argument("--out", type=pathlib.Path, default=OUT)
 args = parser.parse_args()
 
@@ -220,14 +231,16 @@ newest = 0.0
 for pid, path in files.items():
     texts = [p.get_text("text") for p in pymupdf.open(path)]
     pages, whole = page_keys(texts), loose(key(" ".join(texts)))
-    checked_runs, cell_runs = [], []
-    for run in [*args.runs, *args.cells]:
+    checked_runs, cell_runs, material_runs = [], [], []
+    for run in [*args.runs, *args.cells, *args.materials]:
         answer = run / f"{pid}.json"
         if answer.exists():
             newest = max(newest, answer.stat().st_mtime)
             record, notes = check_run(pid, json.loads(answer.read_text(encoding="utf-8")), pages, whole)
-            (checked_runs if run in args.runs else cell_runs).append((run.name, record, notes))
-            print(f"{pid} {run.name}: {count(record, 'verified')} verified, {count(record, 'quote only')} quote only, {count(record, 'unverified')} unverified")
+            # Runs of different refreshes share folder names ("main"), so each is named with its refresh's folder too.
+            label = f"{run.parent.name}/{run.name}"
+            (checked_runs if run in args.runs else cell_runs if run in args.cells else material_runs).append((label, record, notes))
+            print(f"{pid} {label}: {count(record, 'verified')} verified, {count(record, 'quote only')} quote only, {count(record, 'unverified')} unverified")
     paper = {"id": pid, "file": path.name, "title": None, "firstAuthor": None, "journal": None, "year": None, "doi": None, "kind": None, "battery": None}
     if not checked_runs:
         print(f"{pid}: no answer from Amplifi")
@@ -248,7 +261,7 @@ for pid, path in files.items():
 
     have = [c for c in kept["fullCells"] if c["status"] == "verified"]
     for other, record, _ in checked_runs + cell_runs:
-        if other == name:
+        if record is kept:
             continue
         new = []
         for c in record["fullCells"]:
@@ -262,7 +275,27 @@ for pid, path in files.items():
         kept["performance"] += [v for v in record["performance"] if v["status"] == "verified" and v["testType"] == "full cell"
                                 and (v["metric"], tuple(numbers(v["value"]))) not in known]
         notes.append(f"    added      from {other}: {len(new)} full cells")
-    paper.update(paper_details([kept["paper"], *(r["paper"] for _, r, _ in checked_runs + cell_runs)], texts), kind=kept["kind"], battery=kept["battery"])
+
+    # Materials that only another run found, above all the runs asked only about materials. The same kind with the
+    # same value, or one value inside the other ("1 M NaPF6 in diglyme" and "1 M NaPF6 in diglyme (G2)"), counts once.
+    def same_material(a, b):
+        x, y = loose(key(a["value"])), loose(key(b["value"]))
+        return a["kind"] == b["kind"] and (x == y or (min(len(x), len(y)) >= 6 and (x in y or y in x)))
+
+    have = [m for m in kept["materials"] if m["status"] == "verified"]
+    for other, record, _ in checked_runs + cell_runs + material_runs:
+        if record is kept:
+            continue
+        new = []
+        for m in record["materials"]:
+            if m["status"] == "verified" and not any(same_material(m, h) for h in have):
+                new.append(m)
+                have.append(m)
+        if new:
+            kept["materials"] += new
+            notes.append(f"    added      from {other}: {len(new)} materials")
+    others = checked_runs + cell_runs + material_runs
+    paper.update(paper_details([kept["paper"], *(r["paper"] for _, r, _ in others)], texts), kind=kept["kind"], battery=kept["battery"])
     store["papers"][pid] = paper
     for s in SECTIONS:
         store[s] += kept[s]
@@ -285,7 +318,8 @@ for cells in groups.values():
         c["cathodeLabel"], c["cathodeLabelFormula"] = label, formula
 
 store["extractedAt"] = datetime.datetime.fromtimestamp(newest).astimezone().isoformat(timespec="minutes") if newest else None
-store["method"] = "Amplifi answered two structured questions about each paper, and each value shown was found on a page of its PDF."
+asked = 1 + bool(args.cells) + bool(args.materials)
+store["method"] = f"Amplifi answered {['one', 'two', 'three'][asked - 1]} structured questions about each paper, and each value shown was found on a page of its PDF."
 totals = {status: sum(i["status"] == status for s in SECTIONS for i in store[s]) for status in ("verified", "quote only", "unverified")}
 print("\nall papers: " + ", ".join(f"{n} {s}" for s, n in totals.items()))
 args.out.parent.mkdir(parents=True, exist_ok=True)

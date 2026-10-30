@@ -212,7 +212,7 @@ async function paperFile(id) {
 
 /* ---------------- The Explorer's data, from Amplifi ---------------- */
 
-/** How far the latest refresh got. `done` counts Amplifi's answers (two questions per paper). */
+/** How far the latest refresh got. `done` counts Amplifi's answers (three questions per paper). */
 let refresh = { state: "idle", startedAt: null, finishedAt: null, stage: null, done: 0, failed: 0, total: 0, error: null };
 
 /** Runs a script in scripts/explorer, calling onLine for each line it prints. Rejects with its last lines on failure. */
@@ -257,16 +257,17 @@ async function runRefresh() {
     const papers = (await readdir(PAPERS_DIR)).filter((f) => f.toLowerCase().endsWith(".pdf")).map((f) => f.split("_")[0]).sort();
     if (!papers.length) throw new Error("There are no PDFs in AMPLIFI_PAPERS_DIR.");
     const previous = await previousAnswers(stamp);
-    refresh.total = papers.length * 2;
+    refresh.total = papers.length * 3;
     await mkdir(answers, { recursive: true });
     await runScript([...extract, join(answers, "main"), ...papers, "--proxy", `http://localhost:${PORT}`], count);
     if (refresh.failed === papers.length && !previous) throw new Error("Amplifi didn't answer for any paper.");
     refresh.stage = "Asking Amplifi about each paper's full cells";
     await runScript([...extract, join(answers, "cells"), ...papers, "--proxy", `http://localhost:${PORT}`, "--question", "scripts/explorer/question-fullcells.txt"], count);
+    refresh.stage = "Asking Amplifi about each paper's cell materials";
+    await runScript([...extract, join(answers, "materials"), ...papers, "--proxy", `http://localhost:${PORT}`, "--question", "scripts/explorer/question-materials.txt"], count);
     refresh.stage = "Checking every value against the PDFs";
-    const runs = [join(answers, "main"), ...(previous ? [join(previous, "main")] : [])];
-    const cells = [join(answers, "cells"), ...(previous ? [join(previous, "cells")] : [])];
-    await runScript(["scripts/explorer/build_data.py", PAPERS_DIR, ...runs, "--cells", ...cells, "--out", DATA_FILE]);
+    const both = (folder) => [join(answers, folder), ...(previous ? [join(previous, folder)] : [])];
+    await runScript(["scripts/explorer/build_data.py", PAPERS_DIR, ...both("main"), "--cells", ...both("cells"), "--materials", ...both("materials"), "--out", DATA_FILE]);
     refresh = { ...refresh, state: "done", finishedAt: new Date().toISOString(), stage: null };
   } catch (e) {
     refresh = { ...refresh, state: "failed", finishedAt: new Date().toISOString(), stage: null, error: e.message };

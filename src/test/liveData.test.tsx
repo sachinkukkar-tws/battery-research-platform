@@ -31,7 +31,7 @@ describe("Amplifi's data, live through the proxy", () => {
   it("says where the data came from, and keeps it in view while Amplifi extracts the papers again", async () => {
     const refresh = vi.fn(async () => ({ ...IDLE, state: "running" as const, total: 20 }));
     const { user } = renderApp("/explore", { explorer: fakeExplorer(EXPLORER_FIXTURE, { refresh }) });
-    expect(await screen.findByText(/^From Amplifi, .+ · every value checked against its PDF · \d+ that couldn’t be matched are left out$/)).toBeInTheDocument();
+    expect(await screen.findByText(/^From Amplifi, .+ · every value checked against its PDF · \d+ that didn’t pass the checks are left out$/)).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Refresh from Amplifi" }));
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(await screen.findByRole("button", { name: "Amplifi is extracting the papers" })).toBeInTheDocument();
