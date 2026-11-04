@@ -4,7 +4,7 @@ A React frontend for the Battery Science proof of concept on Amplifi. It shows *
 
 ![The Explorer showing hard carbon with NFPP: the best results at a glance, materials, how each anode was made, and the performance table](docs/images/explorer.png)
 
-> **Status, 30 October 2026.** Three pages: **Explorer**, **Papers** and **Ask Amplifi**, all fed live by Amplifi through the proxy. The Explorer and Papers show Amplifi's answers about each paper, one structured question per paper, keeping only the values whose sentence is found on the PDF page; **Refresh from Amplifi** asks again. Ask Amplifi sends every question to Amplifi: in a 15-question test on 28 October it scored 91%, with no invented numbers.
+> **Status, 4 November 2026.** Three pages: **Explorer**, **Papers** and **Ask Amplifi**, all fed live by Amplifi through the proxy. The Explorer and Papers show Amplifi's answers about each paper, keeping only the values whose sentence is found on the PDF page; **Refresh from Amplifi** asks again. Ask Amplifi sends every question to Amplifi: in a 15-question test on 28 October it scored 91%, with no invented numbers. Since 4 November a chat can be exported as a file, and chats can be renamed, pinned, archived or deleted from their **⋯** menu.
 
 **Contents:** [What the app does](#what-the-app-does) · [Quick start](#quick-start) · [Running with Amplifi](#running-with-amplifi) · [The Explorer's data](#the-explorers-data) · [How it works](#how-it-works) · [Configuration](#configuration) · [Commands](#commands) · [Do and don't](#do-and-dont) · [Troubleshooting](#troubleshooting) · [Testing](#testing) · [Project structure](#project-structure) · [Known limitations](#known-limitations) · [More documentation](#more-documentation)
 
@@ -153,7 +153,9 @@ flowchart LR
 ```
 
 - **The browser never talks to Amplifi.** The Vite dev server forwards `/amplifi` to the proxy, and only the proxy holds the Amplifi login and token.
-- **One Amplifi chat per conversation.** The proxy creates an Amplifi chat session for the first question of each chat, so follow-up questions work. **New chat** starts a new one; the earlier chats stay under **Previous chats** (kept in this browser, up to 50), and a reopened chat continues its own Amplifi conversation.
+- **One Amplifi chat per conversation.** The proxy creates an Amplifi chat session for the first question of each chat, so follow-up questions work. **New chat** starts a new one; the earlier chats stay under **Previous chats** (kept in this browser, up to 50, and pinned chats are never dropped), and a reopened chat continues its own Amplifi conversation.
+- **Managing chats.** Each chat's **⋯** menu renames it, pins it to a **Pinned** group at the top, archives it into a folded **Archived** section, or deletes it. Asking again in an archived chat brings it back to the list.
+- **Exporting a chat.** **Export chat** downloads the chat on screen as a Markdown file: each question with what it searched (all papers or one), Amplifi's answer with its citations, and a list of the cited papers with their authors, year, journal and DOI. It leaves out page numbers, because Amplifi's are unreliable.
 - **Every question asks Amplifi to search first.** The proxy adds a short note to each question, and adds *"Answer using only paper CPxx"* when a paper is picked in the list.
 - **Structured answers.** `POST /amplifi/structured` takes `{ question, schema }`, where `schema` is a JSON Schema, and returns `{ data }` in that shape. The proxy sends it to Amplifi's `/chat/upload` with `output_schema`. The extraction scripts use it.
 - **Answers are rendered safely.** Markdown is shown as headings, lists and tables; raw HTML is never rendered; citation markers become buttons that open the paper, including ones with a note such as `[CP01, laboratory measurement]`.
@@ -255,12 +257,12 @@ The browser's side of these contracts is in `src/services/amplifiApi.ts` (the ch
 
 ## Testing
 
-`npm test` runs 92 tests across 12 files:
+`npm test` runs 99 tests across 13 files:
 
-- **Domain logic:** the Explorer's grouping, ranking, evidence checks, headline results and highlighting; the header search; citations and the Markdown conversion of Amplifi answers.
+- **Domain logic:** the Explorer's grouping, ranking, evidence checks, headline results and highlighting; the header search; citations, the Markdown conversion of Amplifi answers, and the chat export file.
 - **Amplifi's recorded answers:** `src/test/fixtures/explorerData.ts`, a copy of the proxy's data used only by the tests. Every checked value has a known paper and a PDF page, and each cathode lists the papers the PDFs show.
 - **Services and the proxy:** HTTP error handling and the proxy contract, including a check that the browser never sends credentials; the proxy's structured, PDF and Explorer data routes, run against a stand-in Amplifi.
-- **Whole-app flows:** the navigation and search, the Explorer from anode to source, Papers, and Ask Amplifi with follow-ups, the paper filter, citations and the badges; and the data's states: not read yet, refreshing, a failed refresh, and the proxy offline.
+- **Whole-app flows:** the navigation and search, the Explorer from anode to source, Papers, and Ask Amplifi with follow-ups, the paper filter, citations, the badges, previous chats with their menu (rename, pin, archive, delete) and the export; and the data's states: not read yet, refreshing, a failed refresh, and the proxy offline.
 
 **Answer quality.** On 28 October we asked Amplifi 15 questions through this app and scored each answer against the original papers. It scored 137 of 150 points (91%): 14 answers passed, 1 was partly right, and every number was in the paper it cited.
 
@@ -293,7 +295,9 @@ Built with React 18, TypeScript, Vite, React Router, CSS Modules and Vitest, in 
 - **The Explorer reads only the papers in `AMPLIFI_PAPERS_DIR`.** Ask Amplifi searches the papers loaded in Amplifi.
 - **Questions across several papers can miss a paper.** The agent runs one search rather than one per paper.
 - **Answers vary between runs,** in the chat and in a refresh. This Amplifi version doesn't pass the agent's temperature setting to the model.
-- **No streaming.** The whole answer arrives at once, usually after 15 to 25 seconds.
+- **No streaming.** The whole answer arrives at once, usually after 15 to 40 seconds; questions across all the papers take longest.
+- **Answers name the paper, not the page.** Amplifi stores most passages as page 1, so the chat cites papers only. The Explorer's pages are right because they come from the check against the PDF.
+- **Chats live in one browser.** Previous chats, pins and archives are kept in that browser's storage, not in Amplifi, so they don't follow you to another browser or computer.
 
 ## More documentation
 
