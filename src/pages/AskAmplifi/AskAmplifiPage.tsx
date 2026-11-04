@@ -1,10 +1,11 @@
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, History } from "lucide-react";
+import { ArrowDown, Download, History } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { AssistantMessage } from "@/components/chat/AssistantMessage";
 import { ChatHistory } from "@/components/chat/ChatHistory";
 import { Composer } from "@/components/chat/Composer";
 import { Welcome } from "@/components/chat/Welcome";
+import { chatExportFileName, chatToMarkdown } from "@/domain/chatExport";
 import { suggestQuestions } from "@/domain/explorer";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { canAskAbout } from "@/services/config";
@@ -78,6 +79,19 @@ export function AskAmplifiPage() {
     [showToast],
   );
 
+  // Saves the chat on screen as a Markdown file: the questions, Amplifi's answers and the papers they cite.
+  const exportChat = () => {
+    const current = chat.chats.find((c) => c.id === chat.currentId);
+    if (!current) return;
+    const url = URL.createObjectURL(new Blob([chatToMarkdown(current, data?.papers ?? {})], { type: "text/markdown;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = chatExportFileName(current);
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast("Chat exported as a Markdown file.");
+  };
+
   const feedback = useCallback(
     (id: string, v: "up" | "down" | null) => {
       chat.setFeedback(id, v);
@@ -95,6 +109,9 @@ export function AskAmplifiPage() {
         currentId={chat.currentId}
         onOpen={openChat}
         onDelete={chat.deleteChat}
+        onRename={chat.renameChat}
+        onPin={chat.setPinned}
+        onArchive={chat.setArchived}
         onClose={() => setHistoryOpen(false)}
       />
       <div className={styles.page}>
@@ -108,6 +125,9 @@ export function AskAmplifiPage() {
             onClick={() => setHistoryOpen((open) => !open)}
           >
             <History aria-hidden="true" /> Chats
+          </Button>
+          <Button variant="quiet" onClick={exportChat} disabled={!messages.length || chat.isBusy}>
+            <Download aria-hidden="true" /> Export chat
           </Button>
           <Button variant="quiet" onClick={newChat} disabled={!messages.length}>
             New chat

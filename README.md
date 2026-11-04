@@ -14,7 +14,7 @@ A React frontend for the Battery Science proof of concept on Amplifi. It shows *
 | --- | --- |
 | **Explorer** | Pick an anode and a cathode it has been paired with. See the pair's best results at a glance, then its performance (half-cell and full-cell results apart), how each anode was made, its materials and the papers behind it, one tab at a time |
 | **Papers** | Open any paper Amplifi has read to see everything it found, one tab at a time: performance, synthesis, full cells and materials, with the paper's DOI and PDF. Papers without a full cell, such as CP04, and the CP08 review are here too |
-| **Ask Amplifi** | Ask about the papers in plain language and get answers with clickable citations, with follow-up questions in the same chat. Previous chats stay in a list and can be opened again |
+| **Ask Amplifi** | Ask about the papers in plain language and get answers with clickable citations, with follow-up questions in the same chat. Previous chats stay in a list and can be opened again; each chat's **⋯** menu renames, pins, archives or deletes it. **Export chat** saves the chat on screen as a Markdown file, with the papers it cites |
 
 - **Every value opens its source:** the sentence it was copied from, with the value highlighted, and a button that opens the PDF at that page.
 - **The search in the header** finds a material, a sample, a paper or a DOI. Press `/` to jump to it.
@@ -288,7 +288,7 @@ Built with React 18, TypeScript, Vite, React Router, CSS Modules and Vitest, in 
 
 ## Known limitations
 
-- **The Explorer's data is as fresh as the last refresh,** which takes several minutes. Values that can't be matched to their PDF aren't shown; the page says how many.
+- **The Explorer's data is as fresh as the last refresh,** which takes several minutes. Values that can't be matched to their PDF aren't shown.
 - **The PDF opens at the right page,** but the value is highlighted only in the app's source view, not inside the PDF.
 - **The Explorer reads only the papers in `AMPLIFI_PAPERS_DIR`.** Ask Amplifi searches the papers loaded in Amplifi.
 - **Questions across several papers can miss a paper.** The agent runs one search rather than one per paper.

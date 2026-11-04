@@ -37,6 +37,10 @@ export interface ChatSession {
   messages: ChatMessage[];
   /** Amplifi's chat session, so follow-up questions continue it. */
   conversationId: string | null;
+  /** Pinned chats are listed first. */
+  pinned?: boolean;
+  /** Archived chats are listed apart, under Archived. */
+  archived?: boolean;
 }
 
 export interface AskRequest {

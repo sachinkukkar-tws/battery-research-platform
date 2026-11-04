@@ -25,6 +25,10 @@ interface ChatApi {
   /** Shows a previous chat again; follow-up questions continue its Amplifi conversation. */
   openChat: (chatId: string) => void;
   deleteChat: (chatId: string) => void;
+  renameChat: (chatId: string, title: string) => void;
+  setPinned: (chatId: string, pinned: boolean) => void;
+  /** Archiving the chat on screen leaves a new, empty chat. */
+  setArchived: (chatId: string, archived: boolean) => void;
   setFeedback: (messageId: string, feedback: "up" | "down" | null) => void;
   /** Increments whenever another screen asks for the composer to take focus. */
   focusRequest: number;
@@ -144,6 +148,16 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     [state.currentId],
   );
 
+  const renameChat = useCallback((chatId: string, title: string) => dispatch({ type: "edit", chatId, patch: { title } }), []);
+  const setPinned = useCallback((chatId: string, pinned: boolean) => dispatch({ type: "edit", chatId, patch: { pinned } }), []);
+  const setArchived = useCallback(
+    (chatId: string, archived: boolean) => {
+      if (archived && chatId === state.currentId) controllerRef.current?.abort();
+      dispatch({ type: "edit", chatId, patch: { archived } });
+    },
+    [state.currentId],
+  );
+
   const setFeedback = useCallback(
     (id: string, feedback: "up" | "down" | null) => {
       if (current) dispatch({ type: "update", chatId: current.id, id, patch: { feedback } });
@@ -167,6 +181,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       newChat,
       openChat,
       deleteChat,
+      renameChat,
+      setPinned,
+      setArchived,
       setFeedback,
       focusRequest,
       requestComposerFocus,
@@ -183,6 +200,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       newChat,
       openChat,
       deleteChat,
+      renameChat,
+      setPinned,
+      setArchived,
       setFeedback,
       focusRequest,
       requestComposerFocus,

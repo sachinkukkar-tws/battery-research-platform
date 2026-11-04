@@ -14,7 +14,9 @@ export type ChatAction =
   | { type: "remove"; chatId: string; ids: string[] }
   | { type: "conversation"; chatId: string; conversationId: string }
   | { type: "open"; chatId: string | null }
-  | { type: "delete"; chatId: string };
+  | { type: "delete"; chatId: string }
+  /** Renames, pins or archives a chat. */
+  | { type: "edit"; chatId: string; patch: Partial<Pick<ChatSession, "title" | "pinned" | "archived">> };
 
 /** The oldest chats beyond this are dropped, so the saved list stays small. */
 const MAX_CHATS = 50;
@@ -36,8 +38,15 @@ export function chatReducer(state: ChatsState, action: ChatAction): ChatsState {
       const chat: ChatSession = existing
         ? { ...existing, messages: [...existing.messages, ...action.messages], updatedAt: action.at }
         : { id: action.chatId, title: titleOf(question), createdAt: action.at, updatedAt: action.at, messages: action.messages, conversationId: null };
-      // The chat asked in moves to the top of the list.
-      return { chats: [chat, ...others].slice(0, MAX_CHATS), currentId: action.chatId };
+      // The chat asked in moves to the top of the list, and it's no longer archived.
+      const chats = [{ ...chat, archived: false }, ...others];
+      // Past the limit, the oldest chats that aren't pinned are dropped.
+      while (chats.length > MAX_CHATS) {
+        let oldest = chats.length - 1;
+        while (oldest > 0 && chats[oldest]!.pinned) oldest -= 1;
+        chats.splice(oldest, 1);
+      }
+      return { chats, currentId: action.chatId };
     }
     case "update":
       return changeChat(state, action.chatId, (c) => ({ ...c, messages: c.messages.map((m) => (m.id === action.id ? { ...m, ...action.patch } : m)) }));
@@ -49,6 +58,18 @@ export function chatReducer(state: ChatsState, action: ChatAction): ChatsState {
       return { ...state, currentId: action.chatId };
     case "delete":
       return { chats: state.chats.filter((c) => c.id !== action.chatId), currentId: state.currentId === action.chatId ? null : state.currentId };
+    case "edit": {
+      const patch = { ...action.patch };
+      if (patch.title !== undefined) {
+        const title = patch.title.trim();
+        if (title) patch.title = titleOf(title);
+        else delete patch.title;
+      }
+      // An archived chat isn't pinned, and archiving the chat on screen leaves a new, empty chat.
+      if (patch.archived) patch.pinned = false;
+      const next = changeChat(state, action.chatId, (c) => ({ ...c, ...patch }));
+      return patch.archived && state.currentId === action.chatId ? { ...next, currentId: null } : next;
+    }
   }
 }
 
