@@ -62,7 +62,7 @@ function Papers({ data }: { data: ExplorerData }) {
             </p>
           </Panel>
         )}
-        <DataStatus data={data} />
+        <DataStatus />
       </div>
     </div>
   );

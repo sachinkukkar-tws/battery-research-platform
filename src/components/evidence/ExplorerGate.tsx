@@ -2,17 +2,12 @@ import type { ReactNode } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { Panel } from "@/components/common/Page";
-import { uncheckedCount } from "@/domain/explorer";
 import { useExplorerData } from "@/state/ExplorerDataContext";
 import type { ExplorerData } from "@/types";
 import styles from "./Evidence.module.css";
 
 /** "2026-10-30T11:42+05:30" as "11:42", in the reader's time zone. */
 const formatTime = (iso: string) => new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-
-/** "2026-10-30T11:42+05:30" as "30 October 2026, 11:42", in the reader's time zone. */
-export const formatDateTime = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "an unknown time";
 
 /** How far a refresh has got, while one runs. */
 function RefreshProgress() {
@@ -70,8 +65,8 @@ export function ExplorerGate({ children }: { children: (data: ExplorerData) => R
       <Panel title="No data from Amplifi yet">
         <div className={styles.gate}>
           <p className={styles.empty}>
-            The Explorer shows what Amplifi extracts from the papers, with every value checked against its PDF. Nothing has been extracted
-            yet. Amplifi is asked three questions about each paper, and the result is kept for next time.
+            The Explorer shows what Amplifi extracts from the papers, with every value checked against its PDF. Nothing has been extracted yet. Amplifi is asked
+            three questions about each paper, and the result is kept for next time.
           </p>
           <RefreshButton>Extract the papers with Amplifi</RefreshButton>
           <RefreshProgress />
@@ -94,15 +89,10 @@ export function ExplorerGate({ children }: { children: (data: ExplorerData) => R
   );
 }
 
-/** Where the data came from, when, and a way to ask Amplifi again, on one line. */
-export function DataStatus({ data }: { data: ExplorerData }) {
-  const left = uncheckedCount(data);
+/** A way to ask Amplifi about the papers again, and how far a refresh has got. */
+export function DataStatus() {
   return (
     <div className={styles.status}>
-      <p title={data.method}>
-        From Amplifi, {formatDateTime(data.extractedAt)} · every value checked against its PDF
-        {left > 0 && ` · ${left} that didn’t pass the checks are left out`}
-      </p>
       <RefreshButton />
       <RefreshProgress />
       <RefreshProblem />

@@ -121,7 +121,7 @@ function Explorer({ data }: { data: ExplorerData }) {
             <p className={styles.optionSub}>Pick an anode with full cells to see a pair.</p>
           </Panel>
         )}
-        <DataStatus data={data} />
+        <DataStatus />
       </div>
     </div>
   );
