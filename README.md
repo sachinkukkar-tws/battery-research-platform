@@ -2,7 +2,7 @@
 
 A React frontend for the Battery Science proof of concept on Amplifi. It shows what the papers report for each anode and cathode pair, with every value linked to the sentence and PDF page it came from, and lets researchers ask Amplifi about the papers and get cited answers. All data comes live from Amplifi; none is built into the app.
 
-![The Explorer showing hard carbon with NFPP](docs/images/explorer.png)
+![The Explorer showing hard carbon with NFPP](docs/images/explorer-v2.png)
 
 ## Features
 
