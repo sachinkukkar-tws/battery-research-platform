@@ -16,13 +16,14 @@ describe("chatToMarkdown", () => {
   };
   const md = chatToMarkdown(chat, EXPLORER_FIXTURE.papers, new Date(2026, 10, 4, 14, 39));
 
-  it("lists each question with its answer and what was searched", () => {
-    expect(md).toContain("# Which electrolyte gave the higher ICE?");
-    expect(md).toContain("Exported from the Battery Research Platform on 4 November 2026, 14:39.");
-    expect(md).toContain("## Question 1\n\nWhich electrolyte gave the higher ICE?\n\n*Searched: paper CP10 only*");
+  it("lists each question with its answer, under the title and export time only", () => {
+    expect(md.startsWith("# Which electrolyte gave the higher ICE?\n\n*Exported on 4 November 2026, 14:39*\n\n---")).toBe(true);
+    expect(md).toContain("## Question 1\n\nWhich electrolyte gave the higher ICE?\n\n*Searched paper CP10 only*");
     expect(md).toContain("### Amplifi’s answer\n\nEther-based, 92.2% [CP10].");
-    expect(md).toContain("## Question 2\n\nAnd across the papers?\n\n*Searched: all papers*");
+    // A question across all the papers doesn't say so.
+    expect(md).toContain("## Question 2\n\nAnd across the papers?\n\n### Amplifi’s answer");
     expect(md).toContain("*Amplifi couldn’t answer. Amplifi took too long to respond.*");
+    expect(md).not.toMatch(/Battery Research Platform|Check important values/);
   });
 
   it("ends with the cited papers' details, without page numbers", () => {
@@ -31,9 +32,9 @@ describe("chatToMarkdown", () => {
     expect(md).not.toMatch(/page \d/i);
   });
 
-  it("names the file after the day and the first words of the question", () => {
-    expect(chatExportFileName({ title: "Which electrolyte gave the higher ICE?", createdAt: "2026-11-04T09:10:00.000Z" })).toBe(
-      "amplifi-chat-2026-11-04-which-electrolyte-gave-the-higher.md",
-    );
+  it("names the file after the chat, without characters file names can't have", () => {
+    expect(chatExportFileName({ title: "Which electrolyte gave the higher ICE?" })).toBe("Which electrolyte gave the higher ICE");
+    expect(chatExportFileName({ title: 'ICE: ether vs ester / CP10 "summary"' })).toBe("ICE ether vs ester CP10 summary");
+    expect(chatExportFileName({ title: "???" })).toBe("Chat");
   });
 });

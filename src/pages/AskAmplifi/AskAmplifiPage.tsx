@@ -3,10 +3,12 @@ import { ArrowDown, Download, History } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { AssistantMessage } from "@/components/chat/AssistantMessage";
 import { ChatHistory } from "@/components/chat/ChatHistory";
+import { printChat } from "@/components/chat/chatPrint";
 import { Composer } from "@/components/chat/Composer";
 import { Welcome } from "@/components/chat/Welcome";
 import { chatExportFileName, chatToMarkdown } from "@/domain/chatExport";
 import { suggestQuestions } from "@/domain/explorer";
+import { answerToMarkdown } from "@/domain/markdown";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { canAskAbout } from "@/services/config";
 import { useChat } from "@/state/ChatContext";
@@ -79,17 +81,13 @@ export function AskAmplifiPage() {
     [showToast],
   );
 
-  // Saves the chat on screen as a Markdown file: the questions, Amplifi's answers and the papers they cite.
-  const exportChat = () => {
+  // Lays out the chat on screen as a document (the questions, Amplifi's answers and the papers they cite)
+  // and opens the print window, where "Save as PDF" saves it.
+  const exportPdf = () => {
     const current = chat.chats.find((c) => c.id === chat.currentId);
     if (!current) return;
-    const url = URL.createObjectURL(new Blob([chatToMarkdown(current, data?.papers ?? {})], { type: "text/markdown;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = chatExportFileName(current);
-    link.click();
-    URL.revokeObjectURL(url);
-    showToast("Chat exported as a Markdown file.");
+    printChat(chatToMarkdown(current, data?.papers ?? {}, new Date(), answerToMarkdown), chatExportFileName(current));
+    showToast("Choose “Save as PDF” in the print window.");
   };
 
   const feedback = useCallback(
@@ -126,7 +124,7 @@ export function AskAmplifiPage() {
           >
             <History aria-hidden="true" /> Chats
           </Button>
-          <Button variant="quiet" onClick={exportChat} disabled={!messages.length || chat.isBusy}>
+          <Button variant="quiet" onClick={exportPdf} disabled={!messages.length || chat.isBusy}>
             <Download aria-hidden="true" /> Export chat
           </Button>
           <Button variant="quiet" onClick={newChat} disabled={!messages.length}>

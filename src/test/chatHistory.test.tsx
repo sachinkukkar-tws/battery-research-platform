@@ -152,36 +152,39 @@ describe("Previous chats", () => {
     expect(button).toHaveFocus();
   });
 
-  it("exports the chat on screen as a Markdown file", async () => {
-    const ask = vi.fn().mockResolvedValue(answer("Ether-based, 92.2% [CP10].", "conv-4"));
+  it("exports the chat as a PDF through the print window", async () => {
+    const ask = vi.fn().mockResolvedValue(answer("## Result\n\n| Electrolyte | ICE |\n| --- | --- |\n| Ether | 92.2% |\n\n• Higher in ether [CP10]", "conv-7"));
     const { user } = renderApp("/ask", { amplifi: { ask } });
     const exportButton = await screen.findByRole("button", { name: "Export chat" });
     expect(exportButton).toBeDisabled();
     await user.type(screen.getByLabelText("Message Amplifi"), "Which electrolyte gave the higher ICE?{Enter}");
-    await screen.findByText(/^Ether-based/);
+    await screen.findByRole("cell", { name: "92.2%" });
 
-    let blob: Blob | undefined;
-    const createObjectURL = vi.fn((b: Blob) => {
-      blob = b;
-      return "blob:chat";
+    // The document goes into a hidden frame, which opens the print window once it loads. jsdom can't print,
+    // so the frame is caught instead of added to the page.
+    let frame: HTMLIFrameElement | undefined;
+    const append = document.body.appendChild.bind(document.body);
+    const spy = vi.spyOn(document.body, "appendChild").mockImplementation(<T extends Node>(node: T) => {
+      if (node instanceof HTMLIFrameElement) {
+        frame = node;
+        return node;
+      }
+      return append(node);
     });
-    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
-    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     await user.click(exportButton);
+    spy.mockRestore();
 
-    expect(click).toHaveBeenCalledTimes(1);
-    expect((click.mock.contexts[0] as HTMLAnchorElement).download).toMatch(/^amplifi-chat-\d{4}-\d\d-\d\d-which-electrolyte-gave-the-higher\.md$/);
-    // jsdom's Blob has no text(), so read it the older way.
-    const text = await new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.readAsText(blob!);
-    });
-    expect(text).toContain("## Question 1\n\nWhich electrolyte gave the higher ICE?");
-    expect(text).toContain("Ether-based, 92.2% [CP10].");
-    expect(text).toContain("## Papers cited\n\n- **CP10**");
-    expect(await screen.findByText("Chat exported as a Markdown file.")).toBeInTheDocument();
-    click.mockRestore();
+    expect(frame).toBeDefined();
+    const html = frame!.srcdoc;
+    // Named after the chat, with no browser header or footer (zero page margin).
+    expect(html).toContain("<title>Which electrolyte gave the higher ICE</title>");
+    expect(html).toContain("@page { size: A4; margin: 0; }");
+    expect(html).toMatch(/<em>Exported on \d{1,2} \w+ \d{4}, \d\d:\d\d<\/em>/);
+    expect(html).toContain("<h2>Question 1</h2>");
+    expect(html).toContain("<td>92.2%</td>");
+    expect(html).toContain('<li>Higher in ether <span class="cite">[CP10]</span></li>');
+    expect(html).toContain("Papers cited");
+    expect(await screen.findByText("Choose “Save as PDF” in the print window.")).toBeInTheDocument();
   });
 
   it("opens the list from the Chats button on a small screen, and closes it with Escape", async () => {

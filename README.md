@@ -10,7 +10,7 @@ A React frontend for the Battery Science proof of concept on Amplifi. It shows w
 | --- | --- |
 | **Explorer** | Pick an anode, then a cathode it was paired with. See the pair's best results, performance (half and full cells apart), how each anode was made, its materials and the papers behind it |
 | **Papers** | Everything Amplifi found in each paper, with its DOI, PDF and five evidence checks |
-| **Ask Amplifi** | Questions in plain language, answered with clickable citations. Follow-ups continue the chat. **Export chat** saves a chat as Markdown; each chat's **⋯** menu renames, pins, archives or deletes it |
+| **Ask Amplifi** | Questions in plain language, answered with clickable citations. Follow-ups continue the chat. **Export chat** saves a chat as a PDF (through the browser's print window); each chat's **⋯** menu renames, pins, archives or deletes it |
 
 - Every value opens its source: the quoted sentence and a button that opens the PDF at that page.
 - The header search (`/`) finds a material, sample, paper or DOI.
